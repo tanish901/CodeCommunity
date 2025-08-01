@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { useAppSelector, useAppDispatch } from "@/store";
 import { fetchArticles, setFilter, setSelectedTag } from "@/store/articlesSlice";
+import { followUser, unfollowUser } from "@/store/authSlice";
+import { setProfiles } from "@/store/usersSlice";
 import { useQuery } from "@tanstack/react-query";
+import { getRecommendedUsers } from "@/lib/userService";
 import Layout from "@/components/Layout";
 import ArticleCard from "@/components/ArticleCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +16,8 @@ import { Tag } from "@shared/schema";
 
 export default function Home() {
   const { articles, loading, filter, searchQuery, selectedTag } = useAppSelector((state) => state.articles);
+  const { user: currentUser, following } = useAppSelector((state) => state.auth);
+  const { profiles } = useAppSelector((state) => state.users);
   const dispatch = useAppDispatch();
   const [, setLocation] = useLocation();
 
@@ -20,6 +25,12 @@ export default function Home() {
   const { data: popularTags } = useQuery<Tag[]>({
     queryKey: ["/api/tags/popular"],
   });
+
+  // Load recommended users into store
+  useEffect(() => {
+    const recommendedUsers = getRecommendedUsers();
+    dispatch(setProfiles(recommendedUsers));
+  }, [dispatch]);
 
   // Fetch articles with filters
   useEffect(() => {
@@ -30,7 +41,7 @@ export default function Home() {
     }));
   }, [dispatch, searchQuery, selectedTag]);
 
-  const handleFilterChange = (newFilter: 'relevant' | 'latest' | 'top') => {
+  const handleFilterChange = (newFilter: 'relevant' | 'latest' | 'top' | 'following') => {
     dispatch(setFilter(newFilter));
   };
 
@@ -39,16 +50,36 @@ export default function Home() {
     dispatch(fetchArticles({ tag: tag || undefined }));
   };
 
+  const handleFollow = (userId: string) => {
+    if (!currentUser) return;
+
+    if (following.includes(userId)) {
+      dispatch(unfollowUser(userId));
+    } else {
+      dispatch(followUser(userId));
+    }
+  };
+
   const sortedArticles = [...articles].sort((a, b) => {
     switch (filter) {
       case 'latest':
         return new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime();
       case 'top':
         return (b.likes || 0) - (a.likes || 0);
+      case 'following':
+        // Filter articles from followed users
+        return following.includes(a.authorId || "") ? -1 : 1;
       default: // relevant
         return (b.views || 0) - (a.views || 0);
     }
   });
+
+  // Filter articles based on current filter
+  const filteredArticles = filter === 'following' 
+    ? sortedArticles.filter(article => following.includes(article.authorId || ""))
+    : sortedArticles;
+
+  const recommendedUsers = getRecommendedUsers();
 
   return (
     <Layout>
@@ -98,138 +129,17 @@ export default function Home() {
                     <Button
                       key={tag.id}
                       variant="ghost"
-                      className={`w-full justify-between p-3 h-auto text-left rounded-lg ${
-                        selectedTag === tag.name ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted"
-                      }`}
+                      className="w-full justify-start text-foreground hover:bg-muted rounded-lg"
                       onClick={() => handleTagSelect(tag.name)}
                     >
-                      <span className="font-medium">#{tag.name}</span>
-                      <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
-                        {tag.articlesCount || 0}
-                      </span>
+                      #{tag.name}
                     </Button>
                   ))}
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
 
-
-
-        {/* Main Content */}
-        <div className="col-span-12 lg:col-span-6">
-          <div className="space-y-8">
-            {/* Horizontal Tag Bar */}
-            <div className="relative">
-              <div className="flex items-center space-x-3 overflow-x-auto scrollbar-hide pb-2">
-                <Button
-                  variant={!selectedTag ? "default" : "ghost"}
-                  className={`flex-shrink-0 rounded-full px-6 transition-all duration-200 hover:scale-105 ${
-                    !selectedTag 
-                      ? "bg-primary text-primary-foreground shadow-md hover:shadow-lg" 
-                      : "hover:bg-muted text-muted-foreground hover:shadow-md"
-                  }`}
-                  onClick={() => handleTagSelect(null)}
-                >
-                  For you
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="flex-shrink-0 rounded-full px-6 hover:bg-muted text-muted-foreground hover:shadow-md transition-all duration-200 hover:scale-105"
-                  onClick={() => {
-                    // Filter articles from followed users
-                    dispatch(fetchArticles({ 
-                      search: searchQuery || undefined,
-                      published: true
-                    }));
-                    console.log("Showing articles from followed users");
-                  }}
-                >
-                  Following
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="flex-shrink-0 rounded-full px-6 hover:bg-muted text-muted-foreground hover:shadow-md transition-all duration-200 hover:scale-105"
-                  onClick={() => {
-                    // Filter featured articles
-                    dispatch(fetchArticles({ 
-                      search: searchQuery || undefined,
-                      published: true
-                    }));
-                    console.log("Showing featured articles");
-                  }}
-                >
-                  Featured
-                </Button>
-                {popularTags?.map((tag) => (
-                  <Button
-                    key={tag.id}
-                    variant={selectedTag === tag.name ? "default" : "ghost"}
-                    className={`flex-shrink-0 rounded-full px-6 capitalize transition-all duration-200 hover:scale-105 hover:shadow-md ${
-                      selectedTag === tag.name
-                        ? "bg-primary text-primary-foreground shadow-md hover:shadow-lg"
-                        : "hover:bg-muted text-muted-foreground"
-                    }`}
-                    onClick={() => handleTagSelect(selectedTag === tag.name ? null : tag.name)}
-                  >
-                    #{tag.name}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Articles Feed */}
-            <div className="space-y-8">
-              {loading ? (
-                // Loading skeletons
-                Array.from({ length: 3 }).map((_, index) => (
-                  <Card key={index} className="border-0 shadow-lg bg-card">
-                    <CardContent className="p-8">
-                      <div className="flex items-center space-x-4 mb-6">
-                        <Skeleton className="w-12 h-12 rounded-full" />
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-32" />
-                          <Skeleton className="h-3 w-20" />
-                        </div>
-                      </div>
-                      <Skeleton className="h-8 w-full mb-3" />
-                      <Skeleton className="h-8 w-3/4 mb-6" />
-                      <div className="flex space-x-3 mb-6">
-                        <Skeleton className="h-6 w-20 rounded-full" />
-                        <Skeleton className="h-6 w-24 rounded-full" />
-                      </div>
-                      <div className="flex justify-between">
-                        <div className="flex space-x-6">
-                          <Skeleton className="h-10 w-20" />
-                          <Skeleton className="h-10 w-20" />
-                          <Skeleton className="h-10 w-24" />
-                        </div>
-                        <Skeleton className="h-10 w-10" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              ) : sortedArticles.length > 0 ? (
-                sortedArticles.map((article) => (
-                  <ArticleCard key={article.id} article={article} />
-                ))
-              ) : (
-                <Card className="border-0 shadow-lg bg-card">
-                  <CardContent className="p-12 text-center">
-                    <p className="text-foreground text-xl mb-2">No articles found</p>
-                    <p className="text-muted-foreground">Try adjusting your search or filters</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Sidebar */}
-        <div className="col-span-12 lg:col-span-3">
-          <div className="space-y-8 sticky top-24">
-            {/* Forums Section */}
+            {/* Forums Card */}
             <Card className="border-0 shadow-lg bg-card">
               <CardHeader className="pb-4">
                 <CardTitle className="text-xl font-bold text-foreground">Forums</CardTitle>
@@ -237,23 +147,7 @@ export default function Home() {
               <CardContent className="space-y-4">
                 <div 
                   className="p-4 border border-border rounded-xl hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => {
-                    // In a real app, this would navigate to the forum post
-                    console.log("Opening forum post: What was your win this week?");
-                  }}
-                >
-                  <h4 className="font-semibold text-foreground mb-2">What was your win this week?</h4>
-                  <p className="text-sm text-muted-foreground flex items-center">
-                    <MessageSquare size={14} className="mr-2" />
-                    12 comments
-                  </p>
-                </div>
-                <div 
-                  className="p-4 border border-border rounded-xl hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => {
-                    // In a real app, this would navigate to the forum post
-                    console.log("Opening forum post: Best practices for code reviews?");
-                  }}
+                  onClick={() => setLocation('/forums/best-practices-code-reviews')}
                 >
                   <h4 className="font-semibold text-foreground mb-2">Best practices for code reviews?</h4>
                   <p className="text-sm text-muted-foreground flex items-center">
@@ -263,10 +157,7 @@ export default function Home() {
                 </div>
                 <div 
                   className="p-4 border border-border rounded-xl hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => {
-                    // In a real app, this would navigate to the forum post
-                    console.log("Opening forum post: Favorite development tools in 2024");
-                  }}
+                  onClick={() => setLocation('/forums/favorite-development-tools-2024')}
                 >
                   <h4 className="font-semibold text-foreground mb-2">Favorite development tools in 2024</h4>
                   <p className="text-sm text-muted-foreground flex items-center">
@@ -283,17 +174,21 @@ export default function Home() {
                 <CardTitle className="text-xl font-bold text-foreground">Recommended Authors</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {[
-                  { name: "Sarah Chen", title: "DevOps enthusiast", avatar: "", username: "sarahchen" },
-                  { name: "Michael Rodriguez", title: "Fullstack developer", avatar: "", username: "michaelr" },
-                  { name: "Alex Kim", title: "Frontend specialist", avatar: "", username: "alexkim" },
-                ].map((author, index) => (
-                  <div key={index} className="flex items-center space-x-4">
+                {recommendedUsers.map((author) => (
+                  <div key={author.id} className="flex items-center space-x-4">
                     <div 
                       className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/20 transition-colors"
                       onClick={() => setLocation(`/author/${author.username}`)}
                     >
-                      <User size={18} className="text-primary" />
+                      {author.avatar ? (
+                        <img 
+                          src={author.avatar} 
+                          alt={author.name} 
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <User size={18} className="text-primary" />
+                      )}
                     </div>
                     <div className="flex-1">
                       <p 
@@ -302,18 +197,19 @@ export default function Home() {
                       >
                         {author.name}
                       </p>
-                      <p className="text-sm text-muted-foreground">{author.title}</p>
+                      <p className="text-sm text-muted-foreground">{author.profession}</p>
                     </div>
                     <Button 
                       size="sm" 
-                      variant="outline" 
-                      className="rounded-full hover:bg-primary hover:text-primary-foreground transition-colors"
-                      onClick={() => {
-                        // In a real app, this would call an API to follow the user
-                        console.log(`Following ${author.name}`);
-                      }}
+                      variant={following.includes(author.id) ? "default" : "outline"}
+                      className={`rounded-full transition-colors ${
+                        following.includes(author.id) 
+                          ? "bg-muted text-foreground hover:bg-muted/80" 
+                          : "hover:bg-primary hover:text-primary-foreground"
+                      }`}
+                      onClick={() => handleFollow(author.id)}
                     >
-                      Follow
+                      {following.includes(author.id) ? "Following" : "Follow"}
                     </Button>
                   </div>
                 ))}
@@ -346,6 +242,81 @@ export default function Home() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="col-span-12 lg:col-span-9">
+          {/* Filter Tabs */}
+          <div className="flex space-x-1 mb-8 bg-muted/50 rounded-lg p-1">
+            <Button
+              variant={filter === 'relevant' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleFilterChange('relevant')}
+              className="flex-1"
+            >
+              Relevant
+            </Button>
+            <Button
+              variant={filter === 'latest' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleFilterChange('latest')}
+              className="flex-1"
+            >
+              Latest
+            </Button>
+            <Button
+              variant={filter === 'top' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleFilterChange('top')}
+              className="flex-1"
+            >
+              Top
+            </Button>
+            <Button
+              variant={filter === 'following' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleFilterChange('following')}
+              className="flex-1"
+            >
+              Following
+            </Button>
+          </div>
+
+          {/* Articles */}
+          <div className="space-y-6">
+            {loading ? (
+              Array.from({ length: 5 }).map((_, index) => (
+                <Card key={index} className="border-0 shadow-lg">
+                  <CardContent className="p-6">
+                    <Skeleton className="h-6 w-3/4 mb-4" />
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </CardContent>
+                </Card>
+              ))
+            ) : filteredArticles.length > 0 ? (
+              filteredArticles.map((article) => (
+                <ArticleCard key={article.id} article={article} />
+              ))
+            ) : (
+              <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm">
+                <CardContent className="p-12 text-center">
+                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                    <HomeIcon size={32} className="text-muted-foreground" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">
+                    {filter === 'following' ? 'No articles from followed authors' : 'No articles found'}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {filter === 'following' 
+                      ? 'Follow some authors to see their articles here.' 
+                      : 'Try adjusting your search or filter criteria.'
+                    }
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>

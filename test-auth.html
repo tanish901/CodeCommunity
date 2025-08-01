@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .test-form {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .summary {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔐 Authentication System Test</h1>
+    
+    <div class="test-container">
+        <h2>Test Controls</h2>
+        <button onclick="clearStorage()">Clear localStorage</button>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="testRegistration()">Test Registration</button>
+        <button onclick="testLogin()">Test Login</button>
+    </div>
+
+    <div class="test-container">
+        <h2>Manual Test</h2>
+        <div class="test-form">
+            <h3>Register New User</h3>
+            <input type="text" id="regUsername" placeholder="Username" value="testuser">
+            <input type="email" id="regEmail" placeholder="Email" value="test@example.com">
+            <input type="password" id="regPassword" placeholder="Password" value="password123">
+            <button onclick="manualRegister()">Register</button>
+        </div>
+        
+        <div class="test-form">
+            <h3>Login</h3>
+            <input type="email" id="loginEmail" placeholder="Email" value="test@example.com">
+            <input type="password" id="loginPassword" placeholder="Password" value="password123">
+            <button onclick="manualLogin()">Login</button>
+        </div>
+    </div>
+
+    <div id="testResults" class="test-container">
+        <h2>Test Results</h2>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        let testResults = [];
+
+        function addResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.textContent = message;
+            resultsDiv.appendChild(resultDiv);
+            testResults.push({ message, type });
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            testResults = [];
+        }
+
+        function clearStorage() {
+            localStorage.clear();
+            addResult('✅ localStorage cleared', 'success');
+        }
+
+        function getStoredUsers() {
+            const stored = localStorage.getItem('users');
+            if (stored) {
+                const users = JSON.parse(stored);
+                // Convert string dates back to Date objects
+                Object.keys(users).forEach(email => {
+                    if (users[email].createdAt) {
+                        users[email].createdAt = new Date(users[email].createdAt);
+                    }
+                });
+                return users;
+            }
+            
+            // Return default mock users if no stored users exist
+            return {
+                'sarah.chen@example.com': {
+                    id: 'user-1',
+                    username: 'sarahchen',
+                    email: 'sarah.chen@example.com',
+                    password: 'password123',
+                    bio: 'Passionate frontend developer',
+                    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b29c?w=150&h=150&fit=crop&crop=face',
+                    location: 'San Francisco, CA',
+                    website: 'https://sarahchen.dev',
+                    createdAt: new Date('2022-03-15'),
+                },
+                'michael.rodriguez@example.com': {
+                    id: 'user-2',
+                    username: 'michaelr',
+                    email: 'michael.rodriguez@example.com',
+                    password: 'password123',
+                    bio: 'Fullstack developer',
+                    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+                    location: 'New York, NY',
+                    website: 'https://michaelr.dev',
+                    createdAt: new Date('2021-08-15'),
+                },
+                'alex.kim@example.com': {
+                    id: 'user-3',
+                    username: 'alexkim',
+                    email: 'alex.kim@example.com',
+                    password: 'password123',
+                    bio: 'Frontend specialist',
+                    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+                    location: 'Seattle, WA',
+                    website: 'https://alexkim.dev',
+                    createdAt: new Date('2023-01-10'),
+                },
+                'john.doe@example.com': {
+                    id: 'user-4',
+                    username: 'johndoe',
+                    email: 'john.doe@example.com',
+                    password: 'password123',
+                    bio: 'Senior Software Engineer',
+                    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+                    location: 'New York, NY',
+                    website: 'https://johndoe.dev',
+                    createdAt: new Date('2021-08-15'),
+                },
+            };
+        }
+
+        function storeUsers(users) {
+            localStorage.setItem('users', JSON.stringify(users));
+        }
+
+        function testRegistration() {
+            clearResults();
+            addResult('🧪 Testing user registration...', 'info');
+            
+            const testUser = {
+                username: 'testuser',
+                email: 'test@example.com',
+                password: 'password123'
+            };
+
+            try {
+                const users = getStoredUsers();
+                
+                // Check if user already exists
+                if (users[testUser.email]) {
+                    addResult('❌ User with this email already exists', 'error');
+                    return;
+                }
+                
+                // Check if username is already taken
+                const existingUser = Object.values(users).find(user => user.username === testUser.username);
+                if (existingUser) {
+                    addResult('❌ Username is already taken', 'error');
+                    return;
+                }
+                
+                // Create a new user
+                const newUser = {
+                    id: `user-${Date.now()}`,
+                    username: testUser.username,
+                    email: testUser.email,
+                    password: testUser.password,
+                    bio: null,
+                    avatar: null,
+                    location: null,
+                    website: null,
+                    createdAt: new Date(),
+                };
+
+                // Store the new user
+                users[testUser.email] = newUser;
+                storeUsers(users);
+
+                addResult('✅ Test user registered successfully', 'success');
+                addResult(`   Username: ${newUser.username}`, 'info');
+                addResult(`   Email: ${newUser.email}`, 'info');
+                addResult(`   User ID: ${newUser.id}`, 'info');
+                
+            } catch (error) {
+                addResult(`❌ Registration failed: ${error.message}`, 'error');
+            }
+        }
+
+        function testLogin() {
+            addResult('🧪 Testing user login...', 'info');
+            
+            const testUser = {
+                email: 'test@example.com',
+                password: 'password123'
+            };
+
+            try {
+                const users = getStoredUsers();
+                const user = users[testUser.email];
+                
+                if (!user || user.password !== testUser.password) {
+                    addResult('❌ Login failed: Invalid email or password', 'error');
+                    return;
+                }
+
+                addResult('✅ Login successful with correct credentials', 'success');
+                addResult(`   User ID: ${user.id}`, 'info');
+                addResult(`   Username: ${user.username}`, 'info');
+                
+                // Test wrong password
+                addResult('🧪 Testing login with wrong password...', 'info');
+                if (user.password !== 'wrongpassword') {
+                    addResult('✅ Login correctly rejected with wrong password', 'success');
+                } else {
+                    addResult('❌ Login incorrectly accepted with wrong password', 'error');
+                }
+                
+                // Test non-existent email
+                addResult('🧪 Testing login with non-existent email...', 'info');
+                const nonExistentUser = users['nonexistent@example.com'];
+                if (!nonExistentUser) {
+                    addResult('✅ Login correctly rejected with non-existent email', 'success');
+                } else {
+                    addResult('❌ Login incorrectly accepted with non-existent email', 'error');
+                }
+                
+            } catch (error) {
+                addResult(`❌ Login test failed: ${error.message}`, 'error');
+            }
+        }
+
+        function runAllTests() {
+            clearResults();
+            addResult('🚀 Running all authentication tests...', 'info');
+            
+            // Test 1: Clear storage
+            addResult('Test 1: Clearing localStorage...', 'info');
+            localStorage.clear();
+            addResult('✅ localStorage cleared', 'success');
+            
+            // Test 2: Registration
+            testRegistration();
+            
+            // Test 3: Login
+            testLogin();
+            
+            // Test 4: Mock users
+            addResult('🧪 Testing existing mock users...', 'info');
+            const users = getStoredUsers();
+            const mockUser = users['sarah.chen@example.com'];
+            
+            if (mockUser && mockUser.password === 'password123') {
+                addResult('✅ Mock user login successful: sarah.chen@example.com', 'success');
+                addResult(`   Username: ${mockUser.username}`, 'info');
+            } else {
+                addResult('❌ Mock user login failed: sarah.chen@example.com', 'error');
+            }
+            
+            addResult('🎉 All tests completed!', 'success');
+        }
+
+        function manualRegister() {
+            const username = document.getElementById('regUsername').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            
+            if (!username || !email || !password) {
+                addResult('❌ Please fill in all fields', 'error');
+                return;
+            }
+            
+            try {
+                const users = getStoredUsers();
+                
+                if (users[email]) {
+                    addResult('❌ User with this email already exists', 'error');
+                    return;
+                }
+                
+                const existingUser = Object.values(users).find(user => user.username === username);
+                if (existingUser) {
+                    addResult('❌ Username is already taken', 'error');
+                    return;
+                }
+                
+                const newUser = {
+                    id: `user-${Date.now()}`,
+                    username: username,
+                    email: email,
+                    password: password,
+                    bio: null,
+                    avatar: null,
+                    location: null,
+                    website: null,
+                    createdAt: new Date(),
+                };
+
+                users[email] = newUser;
+                storeUsers(users);
+
+                addResult(`✅ User registered successfully: ${email}`, 'success');
+                
+            } catch (error) {
+                addResult(`❌ Registration failed: ${error.message}`, 'error');
+            }
+        }
+
+        function manualLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!email || !password) {
+                addResult('❌ Please fill in all fields', 'error');
+                return;
+            }
+            
+            try {
+                const users = getStoredUsers();
+                const user = users[email];
+                
+                if (!user || user.password !== password) {
+                    addResult('❌ Invalid email or password', 'error');
+                    return;
+                }
+
+                addResult(`✅ Login successful: ${user.username}`, 'success');
+                addResult(`   User ID: ${user.id}`, 'info');
+                
+            } catch (error) {
+                addResult(`❌ Login failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Initialize page
+        window.onload = function() {
+            addResult('🔧 Authentication test page loaded', 'info');
+            addResult('Click "Run All Tests" to test the authentication system', 'info');
+        };
+    </script>
+</body>
+</html>

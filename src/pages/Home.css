@@ -1,0 +1,141 @@
+.home {
+  padding: 0;
+}
+
+.main-feed {
+  max-width: none;
+}
+
+.articles-feed {
+  margin-top: 24px;
+}
+
+.articles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.loading-articles {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.article-skeleton {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.skeleton-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.skeleton-header::before {
+  content: '';
+  width: 40px;
+  height: 40px;
+  background: #e9ecef;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-header::after {
+  content: '';
+  width: 120px;
+  height: 16px;
+  background: #e9ecef;
+  border-radius: 4px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-title {
+  height: 24px;
+  background: #e9ecef;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-excerpt {
+  height: 48px;
+  background: #e9ecef;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-tags {
+  display: flex;
+  gap: 8px;
+}
+
+.skeleton-tags::before,
+.skeleton-tags::after {
+  content: '';
+  width: 60px;
+  height: 24px;
+  background: #e9ecef;
+  border-radius: 12px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.sidebar-left,
+.sidebar-right {
+  position: sticky;
+  top: 88px;
+  height: fit-content;
+}
+
+.trending-section {
+  margin-bottom: 24px;
+}
+
+.trending-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.trending-item:last-child {
+  border-bottom: none;
+}
+
+.trending-link {
+  display: block;
+  color: #212529;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.trending-link:hover {
+  color: #8b5cf6;
+}
+
+.trending-views {
+  color: #6c757d;
+  font-size: 12px;
+}
+
+@media (max-width: 1024px) {
+  .sidebar-left,
+  .sidebar-right {
+    position: static;
+  }
+}

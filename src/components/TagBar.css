@@ -1,0 +1,44 @@
+.tag-bar {
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.tag-scroll-container {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 8px 0;
+  scroll-behavior: smooth;
+}
+
+.tag-button {
+  flex-shrink: 0;
+  padding: 8px 20px;
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 24px;
+  color: #6c757d;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tag-button:hover {
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+  color: #495057;
+}
+
+.tag-button.active {
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  border-color: #8b5cf6;
+  color: white;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+.tag-button.active:hover {
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  transform: translateY(-1px);
+}

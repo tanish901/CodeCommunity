@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
-import { Home as HomeIcon, Info, Mail, BarChart3, User, MessageSquare } from "lucide-react";
+import { Home as HomeIcon, Info, Mail, User, MessageSquare } from "lucide-react";
 import { Tag } from "@shared/schema";
 
 export default function Home() {
@@ -33,8 +33,9 @@ export default function Home() {
     dispatch(setFilter(newFilter));
   };
 
-  const handleTagSelect = (tag: string) => {
-    dispatch(setSelectedTag(selectedTag === tag ? null : tag));
+  const handleTagSelect = (tag: string | null) => {
+    dispatch(setSelectedTag(tag));
+    dispatch(fetchArticles({ tag: tag || undefined }));
   };
 
   const sortedArticles = [...articles].sort((a, b) => {
@@ -118,52 +119,48 @@ export default function Home() {
         {/* Main Content */}
         <div className="col-span-12 lg:col-span-6">
           <div className="space-y-8">
-            {/* Filter Tabs */}
-            <Card className="border-0 shadow-lg bg-card">
-              <CardContent className="p-2">
-                <div className="flex space-x-2">
-                  {(['relevant', 'latest', 'top'] as const).map((filterOption) => (
-                    <Button
-                      key={filterOption}
-                      variant={filter === filterOption ? "default" : "ghost"}
-                      className={`flex-1 capitalize rounded-lg ${
-                        filter === filterOption 
-                          ? "bg-primary text-primary-foreground shadow-md" 
-                          : "hover:bg-muted"
-                      }`}
-                      onClick={() => handleFilterChange(filterOption)}
-                    >
-                      {filterOption}
-                    </Button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Featured Challenge Banner */}
-            <Card className="bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-primary-foreground border-0 shadow-xl">
-              <CardContent className="p-8">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold mb-3">Code Challenges</h2>
-                    <p className="text-primary-foreground/90 mb-6 text-lg">Take your skills to the next level</p>
-                    <div className="flex items-center space-x-6 text-sm">
-                      <span className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-white rounded-full"></div>
-                        <span>Build amazing projects</span>
-                      </span>
-                      <span className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-white rounded-full"></div>
-                        <span>Learn new technologies</span>
-                      </span>
-                    </div>
-                  </div>
-                  <div className="w-24 h-24 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
-                    <BarChart3 size={40} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Horizontal Tag Bar */}
+            <div className="relative">
+              <div className="flex items-center space-x-3 overflow-x-auto scrollbar-hide pb-2">
+                <Button
+                  variant={!selectedTag ? "default" : "ghost"}
+                  className={`flex-shrink-0 rounded-full px-6 ${
+                    !selectedTag 
+                      ? "bg-primary text-primary-foreground shadow-md" 
+                      : "hover:bg-muted text-muted-foreground"
+                  }`}
+                  onClick={() => handleTagSelect(null)}
+                >
+                  For you
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="flex-shrink-0 rounded-full px-6 hover:bg-muted text-muted-foreground"
+                >
+                  Following
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="flex-shrink-0 rounded-full px-6 hover:bg-muted text-muted-foreground"
+                >
+                  Featured
+                </Button>
+                {popularTags?.map((tag) => (
+                  <Button
+                    key={tag.id}
+                    variant={selectedTag === tag.name ? "default" : "ghost"}
+                    className={`flex-shrink-0 rounded-full px-6 capitalize ${
+                      selectedTag === tag.name
+                        ? "bg-primary text-primary-foreground shadow-md"
+                        : "hover:bg-muted text-muted-foreground"
+                    }`}
+                    onClick={() => handleTagSelect(tag.name)}
+                  >
+                    {tag.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
 
             {/* Articles Feed */}
             <div className="space-y-8">

@@ -5,7 +5,7 @@ import { useAppSelector, useAppDispatch } from "@/store";
 import { fetchArticles } from "@/store/articlesSlice";
 import { setProfile } from "@/store/usersSlice";
 import { followUser, unfollowUser } from "@/store/authSlice";
-import { getUserByUsername } from "@/lib/userService";
+import { storage } from "@/lib/localStorage";
 import Layout from "@/components/Layout";
 import ArticleCard from "@/components/ArticleCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,8 +39,15 @@ export default function AuthorProfile() {
   const { profiles } = useAppSelector((state) => state.users);
   const dispatch = useAppDispatch();
 
-  // Get author data from store or fetch if not available
-  const authorData = profiles[username || ""] || getUserByUsername(username || "");
+  // Fetch author data from localStorage
+  const { data: authorData, isLoading: authorLoading } = useQuery({
+    queryKey: ["user", username],
+    queryFn: async () => {
+      if (!username) return null;
+      return await storage.getUserByUsername(username);
+    },
+    enabled: !!username,
+  });
 
   // Check if current user is following this author
   const isFollowing = currentUser && authorData ? following.includes(authorData.id) : false;
@@ -73,6 +80,24 @@ export default function AuthorProfile() {
     }
   };
 
+  if (authorLoading) {
+    return (
+      <Layout>
+        <div className="container max-w-7xl mx-auto px-4 py-8">
+          <Card className="border-0 shadow-xl bg-card/50 backdrop-blur-sm">
+            <CardContent className="p-8 text-center">
+              <div className="animate-pulse">
+                <div className="w-24 h-24 bg-muted rounded-full mx-auto mb-4"></div>
+                <div className="h-6 bg-muted rounded w-32 mx-auto mb-2"></div>
+                <div className="h-4 bg-muted rounded w-24 mx-auto"></div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
+
   if (!authorData) {
     return (
       <Layout>
@@ -102,42 +127,23 @@ export default function AuthorProfile() {
                   <div className="text-center mb-6">
                     <div className="relative inline-block">
                       <Avatar className="w-24 h-24 mx-auto border-4 border-primary/20 shadow-lg">
-                        <AvatarImage src={authorData.avatar} alt={authorData.name} />
+                        <AvatarImage src={authorData.avatar || ""} alt={authorData.username} />
                         <AvatarFallback className="text-2xl bg-primary/10 text-primary">
-                          {authorData.name.charAt(0)}
+                          {authorData.username.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      {authorData.isVerified && (
-                        <div className="absolute -bottom-2 -right-2 bg-blue-500 rounded-full p-1">
-                          <CheckCircle size={16} className="text-white" />
-                        </div>
-                      )}
                     </div>
                     
                     <div className="mt-4">
                       <div className="flex items-center justify-center space-x-2 mb-1">
-                        <h1 className="text-xl font-bold">{authorData.name}</h1>
-                        {authorData.achievements.includes("Top Contributor") && (
-                          <Trophy size={16} className="text-yellow-500" />
-                        )}
+                        <h1 className="text-xl font-bold">{authorData.username}</h1>
                       </div>
                       <p className="text-muted-foreground">@{authorData.username}</p>
                     </div>
                   </div>
 
                   <div className="space-y-4 mb-6">
-                    <p className="text-sm text-center leading-relaxed">{authorData.bio}</p>
-                    
-                    <div className="flex justify-center space-x-6 text-sm">
-                      <div className="text-center">
-                        <p className="font-semibold">{authorData.followers.toLocaleString()}</p>
-                        <p className="text-muted-foreground">Followers</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="font-semibold">{authorData.following.toLocaleString()}</p>
-                        <p className="text-muted-foreground">Following</p>
-                      </div>
-                    </div>
+                    <p className="text-sm text-center leading-relaxed">{authorData.bio || "No bio available"}</p>
                   </div>
 
                   <div className="space-y-3 mb-6">
@@ -150,7 +156,7 @@ export default function AuthorProfile() {
                     
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                       <Calendar size={14} />
-                      <span>Joined {formatDistanceToNow(new Date(authorData.joinedDate), { addSuffix: true })}</span>
+                      <span>Joined {formatDistanceToNow(new Date(authorData.createdAt), { addSuffix: true })}</span>
                     </div>
                   </div>
 
@@ -164,30 +170,6 @@ export default function AuthorProfile() {
                       >
                         <Globe size={14} />
                         <span>Website</span>
-                      </a>
-                    )}
-                    
-                    {authorData.github && (
-                      <a
-                        href={`https://github.com/${authorData.github}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <Github size={14} />
-                        <span>GitHub</span>
-                      </a>
-                    )}
-                    
-                    {authorData.twitter && (
-                      <a
-                        href={`https://twitter.com/${authorData.twitter}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <Twitter size={14} />
-                        <span>Twitter</span>
                       </a>
                     )}
                   </div>
@@ -222,7 +204,7 @@ export default function AuthorProfile() {
                 <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm hover:shadow-xl transition-shadow">
                   <CardContent className="p-4 text-center">
                     <BookOpen size={24} className="mx-auto text-blue-500 mb-2" />
-                    <p className="text-2xl font-bold">{authorData.articlesCount}</p>
+                    <p className="text-2xl font-bold">{authorArticles.length}</p>
                     <p className="text-xs text-muted-foreground">Articles</p>
                   </CardContent>
                 </Card>
@@ -230,7 +212,7 @@ export default function AuthorProfile() {
                 <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm hover:shadow-xl transition-shadow">
                   <CardContent className="p-4 text-center">
                     <Eye size={24} className="mx-auto text-green-500 mb-2" />
-                    <p className="text-2xl font-bold">{authorData.totalViews.toLocaleString()}</p>
+                    <p className="text-2xl font-bold">{authorArticles.reduce((sum, article) => sum + (article.views || 0), 0).toLocaleString()}</p>
                     <p className="text-xs text-muted-foreground">Views</p>
                   </CardContent>
                 </Card>
@@ -238,7 +220,7 @@ export default function AuthorProfile() {
                 <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm hover:shadow-xl transition-shadow">
                   <CardContent className="p-4 text-center">
                     <Heart size={24} className="mx-auto text-red-500 mb-2" />
-                    <p className="text-2xl font-bold">{authorData.totalLikes.toLocaleString()}</p>
+                    <p className="text-2xl font-bold">{authorArticles.reduce((sum, article) => sum + (article.likes || 0), 0).toLocaleString()}</p>
                     <p className="text-xs text-muted-foreground">Likes</p>
                   </CardContent>
                 </Card>
@@ -246,30 +228,11 @@ export default function AuthorProfile() {
                 <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm hover:shadow-xl transition-shadow">
                   <CardContent className="p-4 text-center">
                     <Users size={24} className="mx-auto text-purple-500 mb-2" />
-                    <p className="text-2xl font-bold">{authorData.followers.toLocaleString()}</p>
+                    <p className="text-2xl font-bold">0</p>
                     <p className="text-xs text-muted-foreground">Followers</p>
                   </CardContent>
                 </Card>
               </div>
-
-              {/* Skills Section */}
-              <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Trophy size={20} />
-                    <span>Skills & Technologies</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {authorData.skills.map((skill) => (
-                      <Badge key={skill} variant="secondary" className="hover:shadow-md transition-shadow">
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
 
               {/* Articles Section */}
               <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm">

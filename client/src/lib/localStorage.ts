@@ -17,6 +17,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
 
@@ -346,6 +347,11 @@ These modern techniques help create more responsive and maintainable designs.`,
   async getUserByUsername(username: string): Promise<User | undefined> {
     const users = this.getFromStorage<User>(this.STORAGE_KEYS.USERS);
     return Array.from(users.values()).find(user => user.username === username);
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    const users = this.getFromStorage<User>(this.STORAGE_KEYS.USERS);
+    return Array.from(users.values());
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {

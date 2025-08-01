@@ -4,7 +4,7 @@ import { fetchArticles, setFilter, setSelectedTag } from "@/store/articlesSlice"
 import { followUser, unfollowUser } from "@/store/authSlice";
 import { setProfiles } from "@/store/usersSlice";
 import { useQuery } from "@tanstack/react-query";
-import { getRecommendedUsers } from "@/lib/userService";
+import { storage } from "@/lib/localStorage";
 import Layout from "@/components/Layout";
 import ArticleCard from "@/components/ArticleCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,16 +21,30 @@ export default function Home() {
   const dispatch = useAppDispatch();
   const [, setLocation] = useLocation();
 
-  // Fetch popular tags
-  const { data: popularTags } = useQuery<Tag[]>({
-    queryKey: ["/api/tags/popular"],
+  // Fetch popular tags from localStorage
+  const { data: popularTags = [] } = useQuery<Tag[]>({
+    queryKey: ["tags", "popular"],
+    queryFn: async () => {
+      return await storage.getPopularTags(10);
+    },
+  });
+
+  // Fetch recommended users from localStorage
+  const { data: recommendedUsers = [] } = useQuery({
+    queryKey: ["users", "recommended"],
+    queryFn: async () => {
+      const allUsers = await storage.getAllUsers();
+      // Return the first 3 users as recommended
+      return allUsers.slice(0, 3);
+    },
   });
 
   // Load recommended users into store
   useEffect(() => {
-    const recommendedUsers = getRecommendedUsers();
-    dispatch(setProfiles(recommendedUsers));
-  }, [dispatch]);
+    if (recommendedUsers.length > 0) {
+      dispatch(setProfiles(recommendedUsers));
+    }
+  }, [dispatch, recommendedUsers]);
 
   // Fetch articles with filters
   useEffect(() => {
@@ -79,8 +93,6 @@ export default function Home() {
     ? sortedArticles.filter(article => following.includes(article.authorId || ""))
     : sortedArticles;
 
-  const recommendedUsers = getRecommendedUsers();
-
   return (
     <Layout>
       <div className="grid grid-cols-12 gap-8">
@@ -125,16 +137,22 @@ export default function Home() {
                   Recommended Tags
                 </h3>
                 <div className="space-y-3">
-                  {popularTags?.map((tag) => (
-                    <Button
-                      key={tag.id}
-                      variant="ghost"
-                      className="w-full justify-start text-foreground hover:bg-muted rounded-lg"
-                      onClick={() => handleTagSelect(tag.name)}
-                    >
-                      #{tag.name}
-                    </Button>
-                  ))}
+                  {popularTags.length > 0 ? (
+                    popularTags.map((tag) => (
+                      <Button
+                        key={tag.id}
+                        variant="ghost"
+                        className="w-full justify-start text-foreground hover:bg-muted rounded-lg"
+                        onClick={() => handleTagSelect(tag.name)}
+                      >
+                        #{tag.name}
+                      </Button>
+                    ))
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      <p>No tags available</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -174,45 +192,51 @@ export default function Home() {
                 <CardTitle className="text-xl font-bold text-foreground">Recommended Authors</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {recommendedUsers.map((author) => (
-                  <div key={author.id} className="flex items-center space-x-4">
-                    <div 
-                      className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/20 transition-colors"
-                      onClick={() => setLocation(`/author/${author.username}`)}
-                    >
-                      {author.avatar ? (
-                        <img 
-                          src={author.avatar} 
-                          alt={author.name} 
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                      ) : (
-                        <User size={18} className="text-primary" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <p 
-                        className="font-semibold text-foreground cursor-pointer hover:text-primary transition-colors"
+                {recommendedUsers.length > 0 ? (
+                  recommendedUsers.map((author) => (
+                    <div key={author.id} className="flex items-center space-x-4">
+                      <div 
+                        className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/20 transition-colors"
                         onClick={() => setLocation(`/author/${author.username}`)}
                       >
-                        {author.name}
-                      </p>
-                      <p className="text-sm text-muted-foreground">{author.profession}</p>
+                        {author.avatar ? (
+                          <img 
+                            src={author.avatar} 
+                            alt={author.username} 
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                        ) : (
+                          <User size={18} className="text-primary" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p 
+                          className="font-semibold text-foreground cursor-pointer hover:text-primary transition-colors"
+                          onClick={() => setLocation(`/author/${author.username}`)}
+                        >
+                          {author.username}
+                        </p>
+                        <p className="text-sm text-muted-foreground">{author.bio || "No bio available"}</p>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant={following.includes(author.id) ? "default" : "outline"}
+                        className={`rounded-full transition-colors ${
+                          following.includes(author.id) 
+                            ? "bg-muted text-foreground hover:bg-muted/80" 
+                            : "hover:bg-primary hover:text-primary-foreground"
+                        }`}
+                        onClick={() => handleFollow(author.id)}
+                      >
+                        {following.includes(author.id) ? "Following" : "Follow"}
+                      </Button>
                     </div>
-                    <Button 
-                      size="sm" 
-                      variant={following.includes(author.id) ? "default" : "outline"}
-                      className={`rounded-full transition-colors ${
-                        following.includes(author.id) 
-                          ? "bg-muted text-foreground hover:bg-muted/80" 
-                          : "hover:bg-primary hover:text-primary-foreground"
-                      }`}
-                      onClick={() => handleFollow(author.id)}
-                    >
-                      {following.includes(author.id) ? "Following" : "Follow"}
-                    </Button>
+                  ))
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    <p>No recommended authors available</p>
                   </div>
-                ))}
+                )}
               </CardContent>
             </Card>
 

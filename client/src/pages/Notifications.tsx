@@ -91,7 +91,7 @@ export default function Notifications() {
     if (notification.articleId) {
       setLocation(`/article/${notification.articleId}`);
     } else if (notification.type === 'follow') {
-      setLocation(`/profile/${notification.username}`);
+                                setLocation(`/author/${notification.username}`);
     }
   };
 

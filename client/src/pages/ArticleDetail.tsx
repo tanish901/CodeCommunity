@@ -180,7 +180,7 @@ export default function ArticleDetail() {
             {/* Author and Meta */}
             <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-200">
               <div className="flex items-center space-x-4">
-                <Link href={`/profile/${currentArticle.author.id}`}>
+                <Link href={`/author/${currentArticle.author.username}`}>
                   <Avatar className="w-12 h-12 cursor-pointer">
                     <AvatarImage src={currentArticle.author.avatar || ""} alt={currentArticle.author.username} />
                     <AvatarFallback>
@@ -189,7 +189,7 @@ export default function ArticleDetail() {
                   </Avatar>
                 </Link>
                 <div>
-                  <Link href={`/profile/${currentArticle.author.id}`}>
+                  <Link href={`/author/${currentArticle.author.username}`}>
                     <p className="font-semibold text-slate-800 hover:text-primary cursor-pointer">
                       {currentArticle.author.username}
                     </p>
@@ -303,7 +303,7 @@ export default function ArticleDetail() {
               ) : comments.length > 0 ? (
                 comments.map((comment) => (
                   <div key={comment.id} className="flex items-start space-x-4">
-                    <Link href={`/profile/${comment.author.id}`}>
+                    <Link href={`/author/${comment.author.username}`}>
                       <Avatar className="w-10 h-10 cursor-pointer">
                         <AvatarImage src={comment.author.avatar || ""} alt={comment.author.username} />
                         <AvatarFallback>
@@ -313,7 +313,7 @@ export default function ArticleDetail() {
                     </Link>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
-                        <Link href={`/profile/${comment.author.id}`}>
+                        <Link href={`/author/${comment.author.username}`}>
                           <span className="font-medium text-slate-800 hover:text-primary cursor-pointer">
                             {comment.author.username}
                           </span>

@@ -149,10 +149,50 @@ export default function CreatePost() {
       case 'link':
         formattedText = `[${selectedText}](url)`;
         break;
+      case 'list':
+        formattedText = `- ${selectedText}`;
+        break;
+      case 'ordered-list':
+        formattedText = `1. ${selectedText}`;
+        break;
+      case 'image':
+        formattedText = `![Alt text](image-url)`;
+        break;
     }
 
     const newContent = content.substring(0, start) + formattedText + content.substring(end);
     setContent(newContent);
+    
+    // Focus back to textarea and position cursor
+    textarea.focus();
+    textarea.setSelectionRange(start + formattedText.length, start + formattedText.length);
+  };
+
+  const handleImageUpload = () => {
+    // Create a file input element
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        // In a real app, you would upload this to a server
+        // For now, we'll create a local URL and insert it into the content
+        const imageUrl = URL.createObjectURL(file);
+        const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+        if (textarea) {
+          const start = textarea.selectionStart;
+          const imageMarkdown = `![${file.name}](${imageUrl})\n`;
+          const newContent = content.substring(0, start) + imageMarkdown + content.substring(start);
+          setContent(newContent);
+          
+          // Focus back to textarea
+          textarea.focus();
+          textarea.setSelectionRange(start + imageMarkdown.length, start + imageMarkdown.length);
+        }
+      }
+    };
+    input.click();
   };
 
   return (
@@ -193,8 +233,19 @@ export default function CreatePost() {
                       variant="outline"
                       className="w-auto hover:shadow-md transition-all duration-200 hover:scale-105"
                       onClick={() => {
-                        // In a real app, this would open a file picker
-                        setCoverImage("https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800");
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*';
+                        input.onchange = (e) => {
+                          const file = (e.target as HTMLInputElement).files?.[0];
+                          if (file) {
+                            // In a real app, you would upload this to a server
+                            // For now, we'll create a local URL
+                            const imageUrl = URL.createObjectURL(file);
+                            setCoverImage(imageUrl);
+                          }
+                        };
+                        input.click();
                       }}
                     >
                       <Upload size={16} className="mr-2" />
@@ -340,6 +391,7 @@ export default function CreatePost() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => formatText('list')}
                         className="hover:bg-primary/10 hover:text-primary transition-colors"
                       >
                         <List size={16} />
@@ -347,6 +399,7 @@ export default function CreatePost() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => formatText('ordered-list')}
                         className="hover:bg-primary/10 hover:text-primary transition-colors"
                       >
                         <ListOrdered size={16} />
@@ -354,6 +407,7 @@ export default function CreatePost() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={handleImageUpload}
                         className="hover:bg-primary/10 hover:text-primary transition-colors"
                       >
                         <ImageIcon size={16} />
@@ -361,6 +415,18 @@ export default function CreatePost() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => {
+                          // Add a highlight/callout block
+                          const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+                          if (textarea) {
+                            const start = textarea.selectionStart;
+                            const highlightText = `\n> 💡 **Tip:** Add your insight here\n\n`;
+                            const newContent = content.substring(0, start) + highlightText + content.substring(start);
+                            setContent(newContent);
+                            textarea.focus();
+                            textarea.setSelectionRange(start + highlightText.length, start + highlightText.length);
+                          }
+                        }}
                         className="hover:bg-primary/10 hover:text-primary transition-colors"
                       >
                         <Zap size={16} />
@@ -368,6 +434,18 @@ export default function CreatePost() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => {
+                          // Add a code block
+                          const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+                          if (textarea) {
+                            const start = textarea.selectionStart;
+                            const codeBlock = `\n\`\`\`javascript\n// Your code here\n\`\`\`\n\n`;
+                            const newContent = content.substring(0, start) + codeBlock + content.substring(start);
+                            setContent(newContent);
+                            textarea.focus();
+                            textarea.setSelectionRange(start + codeBlock.length, start + codeBlock.length);
+                          }
+                        }}
                         className="hover:bg-primary/10 hover:text-primary transition-colors"
                       >
                         <MoreHorizontal size={16} />

@@ -36,6 +36,14 @@ export default function Navigation() {
 
   return (
     <>
+      {/* Blur Overlay for Search Focus */}
+      {isSearchFocused && (
+        <div 
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm pointer-events-none"
+          style={{ zIndex: 40 }}
+        />
+      )}
+      
       <nav className="bg-card border-b border-border sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -50,7 +58,7 @@ export default function Navigation() {
             </Link>
 
             {/* Search Bar */}
-            <div className="flex-1 max-w-xl mx-8">
+            <div className="flex-1 max-w-xl mx-8 relative z-50">
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
                 <Input
@@ -68,14 +76,6 @@ export default function Navigation() {
                 />
               </div>
             </div>
-
-            {/* Blur Overlay for Search Focus */}
-            {isSearchFocused && (
-              <div 
-                className="fixed inset-0 bg-black/20 backdrop-blur-sm z-10 pointer-events-none"
-                style={{ zIndex: 10 }}
-              />
-            )}
 
             {/* Right Navigation */}
             <div className="flex items-center space-x-3">
@@ -124,7 +124,7 @@ export default function Navigation() {
                       <div 
                         className="text-sm p-3 bg-muted/50 rounded-lg hover:bg-muted/70 cursor-pointer transition-colors"
                         onClick={() => {
-                          setLocation('/profile/sarahchen');
+                          setLocation('/author/sarahchen');
                           setShowNotifications(false);
                         }}
                       >

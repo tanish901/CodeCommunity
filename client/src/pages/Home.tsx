@@ -7,13 +7,14 @@ import ArticleCard from "@/components/ArticleCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Home as HomeIcon, Info, Mail, User, MessageSquare, BarChart3 } from "lucide-react";
 import { Tag } from "@shared/schema";
 
 export default function Home() {
   const { articles, loading, filter, searchQuery, selectedTag } = useAppSelector((state) => state.articles);
   const dispatch = useAppDispatch();
+  const [, setLocation] = useLocation();
 
   // Fetch popular tags
   const { data: popularTags } = useQuery<Tag[]>({
@@ -137,8 +138,13 @@ export default function Home() {
                   variant="ghost"
                   className="flex-shrink-0 rounded-full px-6 hover:bg-muted text-muted-foreground hover:shadow-md transition-all duration-200 hover:scale-105"
                   onClick={() => {
-                    // Following functionality - placeholder for now
-                    console.log("Following clicked");
+                    // Filter articles from followed users
+                    dispatch(fetchArticles({ 
+                      search: searchQuery || undefined,
+                      published: true,
+                      following: true 
+                    }));
+                    console.log("Showing articles from followed users");
                   }}
                 >
                   Following
@@ -147,8 +153,13 @@ export default function Home() {
                   variant="ghost"
                   className="flex-shrink-0 rounded-full px-6 hover:bg-muted text-muted-foreground hover:shadow-md transition-all duration-200 hover:scale-105"
                   onClick={() => {
-                    // Featured functionality - placeholder for now
-                    console.log("Featured clicked");
+                    // Filter featured articles
+                    dispatch(fetchArticles({ 
+                      search: searchQuery || undefined,
+                      published: true,
+                      featured: true 
+                    }));
+                    console.log("Showing featured articles");
                   }}
                 >
                   Featured
@@ -226,21 +237,39 @@ export default function Home() {
                 <CardTitle className="text-xl font-bold text-foreground">Forums</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-4 border border-border rounded-xl hover:bg-muted/50 transition-colors cursor-pointer">
+                <div 
+                  className="p-4 border border-border rounded-xl hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => {
+                    // In a real app, this would navigate to the forum post
+                    console.log("Opening forum post: What was your win this week?");
+                  }}
+                >
                   <h4 className="font-semibold text-foreground mb-2">What was your win this week?</h4>
                   <p className="text-sm text-muted-foreground flex items-center">
                     <MessageSquare size={14} className="mr-2" />
                     12 comments
                   </p>
                 </div>
-                <div className="p-4 border border-border rounded-xl hover:bg-muted/50 transition-colors cursor-pointer">
+                <div 
+                  className="p-4 border border-border rounded-xl hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => {
+                    // In a real app, this would navigate to the forum post
+                    console.log("Opening forum post: Best practices for code reviews?");
+                  }}
+                >
                   <h4 className="font-semibold text-foreground mb-2">Best practices for code reviews?</h4>
                   <p className="text-sm text-muted-foreground flex items-center">
                     <MessageSquare size={14} className="mr-2" />
                     8 comments
                   </p>
                 </div>
-                <div className="p-4 border border-border rounded-xl hover:bg-muted/50 transition-colors cursor-pointer">
+                <div 
+                  className="p-4 border border-border rounded-xl hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => {
+                    // In a real app, this would navigate to the forum post
+                    console.log("Opening forum post: Favorite development tools in 2024");
+                  }}
+                >
                   <h4 className="font-semibold text-foreground mb-2">Favorite development tools in 2024</h4>
                   <p className="text-sm text-muted-foreground flex items-center">
                     <MessageSquare size={14} className="mr-2" />
@@ -257,19 +286,35 @@ export default function Home() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {[
-                  { name: "Sarah Chen", title: "DevOps enthusiast", avatar: "" },
-                  { name: "Michael Rodriguez", title: "Fullstack developer", avatar: "" },
-                  { name: "Alex Kim", title: "Frontend specialist", avatar: "" },
+                  { name: "Sarah Chen", title: "DevOps enthusiast", avatar: "", username: "sarahchen" },
+                  { name: "Michael Rodriguez", title: "Fullstack developer", avatar: "", username: "michaelr" },
+                  { name: "Alex Kim", title: "Frontend specialist", avatar: "", username: "alexkim" },
                 ].map((author, index) => (
                   <div key={index} className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                    <div 
+                      className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/20 transition-colors"
+                      onClick={() => setLocation(`/author/${author.username}`)}
+                    >
                       <User size={18} className="text-primary" />
                     </div>
                     <div className="flex-1">
-                      <p className="font-semibold text-foreground">{author.name}</p>
+                      <p 
+                        className="font-semibold text-foreground cursor-pointer hover:text-primary transition-colors"
+                        onClick={() => setLocation(`/author/${author.username}`)}
+                      >
+                        {author.name}
+                      </p>
                       <p className="text-sm text-muted-foreground">{author.title}</p>
                     </div>
-                    <Button size="sm" variant="outline" className="rounded-full">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="rounded-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                      onClick={() => {
+                        // In a real app, this would call an API to follow the user
+                        console.log(`Following ${author.name}`);
+                      }}
+                    >
                       Follow
                     </Button>
                   </div>

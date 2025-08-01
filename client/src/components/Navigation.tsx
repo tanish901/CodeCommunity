@@ -22,6 +22,7 @@ export default function Navigation() {
   const dispatch = useAppDispatch();
   const [, setLocation] = useLocation();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -72,9 +73,41 @@ export default function Navigation() {
                 Create Post
               </Button>
 
-              <Button variant="ghost" size="sm" className="rounded-full w-10 h-10 p-0">
-                <Bell size={18} />
-              </Button>
+              <DropdownMenu open={showNotifications} onOpenChange={setShowNotifications}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="rounded-full w-10 h-10 p-0 relative">
+                    <Bell size={18} />
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80">
+                  <div className="p-4">
+                    <h3 className="font-semibold text-sm mb-3">Notifications</h3>
+                    <div className="space-y-3">
+                      <div className="text-sm p-3 bg-muted/50 rounded-lg">
+                        <p className="font-medium">New comment on your article</p>
+                        <p className="text-muted-foreground text-xs mt-1">Someone commented on "Getting Started with React 18"</p>
+                        <p className="text-muted-foreground text-xs mt-1">2 hours ago</p>
+                      </div>
+                      <div className="text-sm p-3 bg-muted/50 rounded-lg">
+                        <p className="font-medium">Your article was liked</p>
+                        <p className="text-muted-foreground text-xs mt-1">Alex Kim liked your article about CSS techniques</p>
+                        <p className="text-muted-foreground text-xs mt-1">5 hours ago</p>
+                      </div>
+                      <div className="text-sm p-3 bg-muted/50 rounded-lg">
+                        <p className="font-medium">New follower</p>
+                        <p className="text-muted-foreground text-xs mt-1">Sarah Chen started following you</p>
+                        <p className="text-muted-foreground text-xs mt-1">1 day ago</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-2 border-t">
+                      <Button variant="ghost" className="w-full text-xs">
+                        View all notifications
+                      </Button>
+                    </div>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

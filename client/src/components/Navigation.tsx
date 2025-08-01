@@ -36,11 +36,11 @@ export default function Navigation() {
 
   return (
     <>
-      {/* Blur Overlay for Search Focus */}
+      {/* Blur Overlay for Search Focus - Fixed z-index */}
       {isSearchFocused && (
         <div 
           className="fixed inset-0 bg-black/20 backdrop-blur-sm pointer-events-none"
-          style={{ zIndex: 40 }}
+          style={{ zIndex: 30 }}
         />
       )}
       
@@ -57,8 +57,8 @@ export default function Navigation() {
               </div>
             </Link>
 
-            {/* Search Bar */}
-            <div className="flex-1 max-w-xl mx-8 relative z-50">
+            {/* Search Bar - Higher z-index to appear above blur */}
+            <div className="flex-1 max-w-xl mx-8 relative" style={{ zIndex: 40 }}>
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
                 <Input

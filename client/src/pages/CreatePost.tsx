@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { useAppSelector } from "@/store";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -26,7 +26,8 @@ import {
   Upload,
   X,
   Eye,
-  Settings
+  Settings,
+  Plus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +36,7 @@ export default function CreatePost() {
   const { user } = useAppSelector((state) => state.auth);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [title, setTitle] = useState("New post title here...");
   const [content, setContent] = useState("Write your post content here...");
@@ -42,6 +44,7 @@ export default function CreatePost() {
   const [newTag, setNewTag] = useState("");
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [showTagInput, setShowTagInput] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const createPostMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -109,26 +112,26 @@ export default function CreatePost() {
     }
 
     createPostMutation.mutate({
-      title: title,
-      content: content,
-      tags: tags,
-      coverImage: coverImage,
+      title: title.trim(),
+      content: content.trim(),
+      tags,
+      coverImage,
       published: true,
     });
   };
 
   const handleSaveDraft = () => {
     createPostMutation.mutate({
-      title: title,
-      content: content,
-      tags: tags,
-      coverImage: coverImage,
+      title: title.trim(),
+      content: content.trim(),
+      tags,
+      coverImage,
       published: false,
     });
   };
 
   const addTag = () => {
-    if (newTag.trim() && !tags.includes(newTag.trim()) && tags.length < 4) {
+    if (newTag.trim() && !tags.includes(newTag.trim()) && tags.length < 5) {
       setTags([...tags, newTag.trim()]);
       setNewTag("");
       setShowTagInput(false);
@@ -140,16 +143,14 @@ export default function CreatePost() {
   };
 
   const formatText = (format: string) => {
-    // Basic text formatting - in a real app you'd use a proper rich text editor
     const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selectedText = content.substring(start, end);
-    
-    let formattedText = selectedText;
-    
+
+    let formattedText = "";
     switch (format) {
       case 'bold':
         formattedText = `**${selectedText}**`;
@@ -157,14 +158,14 @@ export default function CreatePost() {
       case 'italic':
         formattedText = `*${selectedText}*`;
         break;
-      case 'code':
-        formattedText = `\`${selectedText}\``;
-        break;
-      case 'link':
-        formattedText = `[${selectedText}](url)`;
+      case 'heading':
+        formattedText = `# ${selectedText}`;
         break;
       case 'quote':
         formattedText = `> ${selectedText}`;
+        break;
+      case 'code':
+        formattedText = `\`${selectedText}\``;
         break;
       case 'list':
         formattedText = `- ${selectedText}`;
@@ -172,23 +173,67 @@ export default function CreatePost() {
       case 'numbered':
         formattedText = `1. ${selectedText}`;
         break;
-      case 'heading':
-        formattedText = `# ${selectedText}`;
+      case 'link':
+        formattedText = `[${selectedText}](url)`;
         break;
+      default:
+        formattedText = selectedText;
     }
-    
+
     const newContent = content.substring(0, start) + formattedText + content.substring(end);
     setContent(newContent);
   };
 
   const handleImageUpload = () => {
-    // In a real app, this would handle file upload
-    const mockImageUrl = "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&h=400&fit=crop";
-    setCoverImage(mockImageUrl);
-    toast({
-      title: "Image uploaded",
-      description: "Cover image has been set",
-    });
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Error",
+        description: "Please select a valid image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "Image file size must be less than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    // Simulate file upload
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      setCoverImage(result);
+      setIsUploading(false);
+      toast({
+        title: "Success",
+        description: "Cover image uploaded successfully!",
+      });
+    };
+    reader.onerror = () => {
+      setIsUploading(false);
+      toast({
+        title: "Error",
+        description: "Failed to upload image",
+        variant: "destructive",
+      });
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -312,10 +357,22 @@ export default function CreatePost() {
                       variant="ghost"
                       size="sm"
                       onClick={handleImageUpload}
+                      disabled={isUploading}
                       className="hover:bg-muted"
                     >
-                      <ImageIcon size={16} />
+                      {isUploading ? (
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <ImageIcon size={16} />
+                      )}
                     </Button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
                   </div>
 
                   {/* Content Textarea */}
@@ -372,19 +429,34 @@ export default function CreatePost() {
                         </Button>
                       </div>
                     ))}
-                    {tags.length < 4 && (
+                    {tags.length < 5 && (
                       <div>
                         {showTagInput ? (
                           <div className="flex space-x-2">
                             <Input
                               value={newTag}
                               onChange={(e) => setNewTag(e.target.value)}
-                              onKeyPress={(e) => e.key === 'Enter' && addTag()}
                               placeholder="Add tag..."
                               className="flex-1"
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  addTag();
+                                }
+                              }}
                             />
                             <Button size="sm" onClick={addTag}>
                               Add
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setShowTagInput(false);
+                                setNewTag("");
+                              }}
+                            >
+                              <X size={12} />
                             </Button>
                           </div>
                         ) : (
@@ -394,7 +466,8 @@ export default function CreatePost() {
                             onClick={() => setShowTagInput(true)}
                             className="w-full"
                           >
-                            + Add Tag
+                            <Plus size={16} className="mr-2" />
+                            Add Tag
                           </Button>
                         )}
                       </div>
@@ -407,15 +480,17 @@ export default function CreatePost() {
               <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <h3 className="font-semibold mb-4">Preview</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center space-x-2">
-                      <Eye size={16} className="text-muted-foreground" />
-                      <span className="text-muted-foreground">Word count: {content.split(' ').length}</span>
+                  <div className="space-y-3">
+                    <div className="text-sm text-muted-foreground">
+                      <p><strong>Title:</strong> {title}</p>
+                      <p><strong>Content:</strong> {content.length} characters</p>
+                      <p><strong>Tags:</strong> {tags.length} tags</p>
+                      {coverImage && <p><strong>Cover Image:</strong> ✓</p>}
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Settings size={16} className="text-muted-foreground" />
-                      <span className="text-muted-foreground">Reading time: ~{Math.ceil(content.split(' ').length / 200)} min</span>
-                    </div>
+                    <Button variant="outline" size="sm" className="w-full">
+                      <Eye size={16} className="mr-2" />
+                      Preview Post
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

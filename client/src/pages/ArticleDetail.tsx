@@ -34,25 +34,76 @@ export default function ArticleDetail() {
     };
   }, [dispatch, id]);
 
+  // Mock comments data
+  const mockComments: (Comment & { author: any })[] = [
+    {
+      id: "comment-1",
+      content: "Great article! This really helped me understand the concepts better.",
+      articleId: id || "",
+      authorId: "user-2",
+      author: {
+        id: "user-2",
+        username: "michaelr",
+        name: "Michael Rodriguez",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+      },
+      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: "comment-2",
+      content: "I've been looking for something like this. Thanks for sharing!",
+      articleId: id || "",
+      authorId: "user-3",
+      author: {
+        id: "user-3",
+        username: "alexkim",
+        name: "Alex Kim",
+        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+      },
+      createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+    },
+  ];
+
   // Fetch comments
-  const { data: comments = [], isLoading: commentsLoading } = useQuery<(Comment & { author: any })[]>({
+  const { data: comments = mockComments, isLoading: commentsLoading } = useQuery<(Comment & { author: any })[]>({
     queryKey: ["/api/articles", id, "comments"],
     enabled: !!id,
+    queryFn: () => {
+      // In a real app, this would fetch from API
+      // For now, return mock data
+      return Promise.resolve(mockComments);
+    },
   });
 
   // Create comment mutation
   const createCommentMutation = useMutation({
     mutationFn: async (commentData: InsertComment) => {
-      const response = await fetch(`/api/articles/${id}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(commentData),
-      });
-      if (!response.ok) throw new Error('Failed to create comment');
-      return response.json();
+      // In a real app, this would be an API call
+      // For now, simulate the API response
+      const newComment: Comment & { author: any } = {
+        id: `comment-${Date.now()}`,
+        content: commentData.content,
+        articleId: commentData.articleId,
+        authorId: commentData.authorId,
+        author: {
+          id: user?.id || "user-1",
+          username: user?.username || "sarahchen",
+          name: user?.name || "Sarah Chen",
+          avatar: user?.avatar || "https://images.unsplash.com/photo-1494790108755-2616b612b29c?w=150&h=150&fit=crop&crop=face",
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      return Promise.resolve(newComment);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/articles", id, "comments"] });
+    onSuccess: (newComment) => {
+      // Update the comments list optimistically
+      queryClient.setQueryData(["/api/articles", id, "comments"], (oldData: any) => {
+        return oldData ? [newComment, ...oldData] : [newComment];
+      });
       setCommentContent("");
       toast({
         title: "Success",
@@ -76,11 +127,37 @@ export default function ArticleDetail() {
 
   const handleCommentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !commentContent.trim()) return;
+    
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "Please log in to comment",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!commentContent.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a comment",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!id) {
+      toast({
+        title: "Error",
+        description: "Article not found",
+        variant: "destructive",
+      });
+      return;
+    }
 
     createCommentMutation.mutate({
-      content: commentContent,
-      articleId: id!,
+      content: commentContent.trim(),
+      articleId: id,
       authorId: user.id,
     });
   };
@@ -102,26 +179,13 @@ export default function ArticleDetail() {
   if (loading) {
     return (
       <Layout>
-        <div className="max-w-4xl mx-auto space-y-6">
-          <Skeleton className="h-8 w-24" />
-          <Card>
-            <CardContent className="p-8">
-              <Skeleton className="h-12 w-full mb-6" />
-              <div className="flex items-center space-x-3 mb-6">
-                <Skeleton className="w-12 h-12 rounded-full" />
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-3 w-24" />
-                </div>
-              </div>
-              <Skeleton className="h-64 w-full mb-6" />
-              <div className="space-y-3">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-              </div>
-            </CardContent>
-          </Card>
+        <div className="container max-w-4xl mx-auto px-4 py-8">
+          <div className="space-y-6">
+            <Skeleton className="h-8 w-32" />
+            <Skeleton className="h-12 w-3/4" />
+            <Skeleton className="h-6 w-1/2" />
+            <Skeleton className="h-96 w-full" />
+          </div>
         </div>
       </Layout>
     );
@@ -130,12 +194,15 @@ export default function ArticleDetail() {
   if (!currentArticle) {
     return (
       <Layout>
-        <div className="max-w-4xl mx-auto">
+        <div className="container max-w-4xl mx-auto px-4 py-8">
           <Card>
             <CardContent className="p-8 text-center">
-              <p className="text-slate-600 text-lg">Article not found</p>
+              <h2 className="text-2xl font-bold mb-4">Article not found</h2>
+              <p className="text-muted-foreground mb-6">
+                The article you're looking for doesn't exist or has been removed.
+              </p>
               <Link href="/">
-                <Button className="mt-4">
+                <Button>
                   <ArrowLeft size={16} className="mr-2" />
                   Back to Home
                 </Button>
@@ -149,100 +216,102 @@ export default function ArticleDetail() {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="container max-w-4xl mx-auto px-4 py-8">
         {/* Back Button */}
-        <Link href="/">
-          <Button variant="ghost" className="mb-4">
-            <ArrowLeft size={16} className="mr-2" />
-            Back to Articles
-          </Button>
-        </Link>
+        <div className="mb-6">
+          <Link href="/">
+            <Button variant="ghost" className="flex items-center space-x-2">
+              <ArrowLeft size={16} />
+              <span>Back to Home</span>
+            </Button>
+          </Link>
+        </div>
 
-        {/* Article */}
-        <Card>
+        {/* Article Content */}
+        <Card className="border-0 shadow-xl mb-8">
           <CardContent className="p-8">
-            {/* Cover Image */}
-            {currentArticle.coverImage && (
-              <div className="w-full h-64 mb-8 overflow-hidden rounded-lg">
-                <img
-                  src={currentArticle.coverImage}
-                  alt={currentArticle.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-
-            {/* Title */}
-            <h1 className="text-3xl font-bold text-slate-800 mb-6">
-              {currentArticle.title}
-            </h1>
-
-            {/* Author and Meta */}
-            <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-200">
-              <div className="flex items-center space-x-4">
-                <Link href={`/author/${currentArticle.author.username}`}>
-                  <Avatar className="w-12 h-12 cursor-pointer">
-                    <AvatarImage src={currentArticle.author.avatar || ""} alt={currentArticle.author.username} />
+            {/* Article Header */}
+            <div className="mb-8">
+              <h1 className="text-4xl font-bold text-foreground mb-4 leading-tight">
+                {currentArticle.title}
+              </h1>
+              
+              {/* Author Info */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-4">
+                  <Avatar className="w-12 h-12">
+                    <AvatarImage src={currentArticle.author?.avatar || ""} alt={currentArticle.author?.name} />
                     <AvatarFallback>
-                      {currentArticle.author.username.charAt(0).toUpperCase()}
+                      {currentArticle.author?.name?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                </Link>
-                <div>
-                  <Link href={`/author/${currentArticle.author.username}`}>
-                    <p className="font-semibold text-slate-800 hover:text-primary cursor-pointer">
-                      {currentArticle.author.username}
-                    </p>
-                  </Link>
-                  <div className="flex items-center space-x-4 text-sm text-slate-600">
-                    <span className="flex items-center">
-                      <Calendar size={14} className="mr-1" />
-                      {formatDistanceToNow(new Date(currentArticle.createdAt!), { addSuffix: true })}
-                    </span>
-                    <span className="flex items-center">
-                      <Eye size={14} className="mr-1" />
-                      {currentArticle.views || 0} views
-                    </span>
+                  <div>
+                    <Link href={`/profile/${currentArticle.authorId}`}>
+                      <p className="font-semibold text-foreground hover:text-primary transition-colors cursor-pointer">
+                        {currentArticle.author?.name}
+                      </p>
+                    </Link>
+                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                      <span className="flex items-center">
+                        <Calendar size={14} className="mr-1" />
+                        {formatDistanceToNow(new Date(currentArticle.createdAt!), { addSuffix: true })}
+                      </span>
+                      <span className="flex items-center">
+                        <Eye size={14} className="mr-1" />
+                        {currentArticle.views || 0} views
+                      </span>
+                    </div>
                   </div>
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  <Button
+                    variant="ghost"
+                    onClick={handleLike}
+                    className={`flex items-center space-x-2 ${
+                      currentArticle.isLiked ? "text-red-500" : "text-slate-600"
+                    }`}
+                  >
+                    <Heart size={20} className={currentArticle.isLiked ? "fill-red-500" : ""} />
+                    <span>{currentArticle.likes || 0}</span>
+                  </Button>
+                  <Button variant="ghost" className="flex items-center space-x-2 text-slate-600">
+                    <MessageCircle size={20} />
+                    <span>{comments.length}</span>
+                  </Button>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="ghost"
-                  onClick={handleLike}
-                  className={`flex items-center space-x-2 ${
-                    currentArticle.isLiked ? "text-red-500" : "text-slate-600"
-                  }`}
-                >
-                  <Heart size={20} className={currentArticle.isLiked ? "fill-red-500" : ""} />
-                  <span>{currentArticle.likes || 0}</span>
-                </Button>
-                <Button variant="ghost" className="flex items-center space-x-2 text-slate-600">
-                  <MessageCircle size={20} />
-                  <span>{comments.length}</span>
-                </Button>
-              </div>
-            </div>
+              {/* Tags */}
+              {currentArticle.tags && currentArticle.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-8">
+                  {currentArticle.tags.map((tag: string) => (
+                    <span key={tag} className={getTagClassName(tag)}>
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
 
-            {/* Tags */}
-            {currentArticle.tags && currentArticle.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-8">
-                {currentArticle.tags.map((tag: string) => (
-                  <span key={tag} className={getTagClassName(tag)}>
-                    #{tag}
-                  </span>
+              {/* Cover Image */}
+              {currentArticle.coverImage && (
+                <div className="mb-8">
+                  <img
+                    src={currentArticle.coverImage}
+                    alt="Cover"
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
+                </div>
+              )}
+
+              {/* Content */}
+              <div className="article-content prose prose-slate max-w-none">
+                {currentArticle.content.split('\n').map((paragraph: string, index: number) => (
+                  <p key={index} className="mb-4 text-slate-700 leading-relaxed">
+                    {paragraph}
+                  </p>
                 ))}
               </div>
-            )}
-
-            {/* Content */}
-            <div className="article-content prose prose-slate max-w-none">
-              {currentArticle.content.split('\n').map((paragraph: string, index: number) => (
-                <p key={index} className="mb-4 text-slate-700 leading-relaxed">
-                  {paragraph}
-                </p>
-              ))}
             </div>
           </CardContent>
         </Card>
@@ -255,7 +324,7 @@ export default function ArticleDetail() {
             </h3>
 
             {/* Add Comment Form */}
-            {user && (
+            {user ? (
               <form onSubmit={handleCommentSubmit} className="mb-8">
                 <div className="flex items-start space-x-4">
                   <Avatar>
@@ -270,6 +339,7 @@ export default function ArticleDetail() {
                       value={commentContent}
                       onChange={(e) => setCommentContent(e.target.value)}
                       rows={3}
+                      className="resize-none"
                     />
                     <div className="flex justify-end">
                       <Button
@@ -282,6 +352,12 @@ export default function ArticleDetail() {
                   </div>
                 </div>
               </form>
+            ) : (
+              <div className="mb-8 p-4 bg-muted/50 rounded-lg text-center">
+                <p className="text-muted-foreground">
+                  Please <Link href="/login" className="text-primary hover:underline">log in</Link> to comment.
+                </p>
+              </div>
             )}
 
             {/* Comments List */}
@@ -303,33 +379,35 @@ export default function ArticleDetail() {
               ) : comments.length > 0 ? (
                 comments.map((comment) => (
                   <div key={comment.id} className="flex items-start space-x-4">
-                    <Link href={`/author/${comment.author.username}`}>
-                      <Avatar className="w-10 h-10 cursor-pointer">
-                        <AvatarImage src={comment.author.avatar || ""} alt={comment.author.username} />
-                        <AvatarFallback>
-                          {comment.author.username.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Link>
+                    <Avatar>
+                      <AvatarImage src={comment.author?.avatar || ""} alt={comment.author?.name} />
+                      <AvatarFallback>
+                        {comment.author?.name?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
-                        <Link href={`/author/${comment.author.username}`}>
-                          <span className="font-medium text-slate-800 hover:text-primary cursor-pointer">
-                            {comment.author.username}
+                        <Link href={`/profile/${comment.authorId}`}>
+                          <span className="font-semibold text-foreground hover:text-primary transition-colors cursor-pointer">
+                            {comment.author?.name}
                           </span>
                         </Link>
-                        <span className="text-sm text-slate-500">
+                        <span className="text-sm text-muted-foreground">
                           {formatDistanceToNow(new Date(comment.createdAt!), { addSuffix: true })}
                         </span>
                       </div>
-                      <p className="text-slate-700">{comment.content}</p>
+                      <p className="text-slate-700 leading-relaxed">{comment.content}</p>
                     </div>
                   </div>
                 ))
               ) : (
-                <p className="text-slate-600 text-center py-8">
-                  No comments yet. Be the first to comment!
-                </p>
+                <div className="text-center py-8">
+                  <MessageCircle size={48} className="mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No comments yet</h3>
+                  <p className="text-muted-foreground">
+                    Be the first to share your thoughts on this article!
+                  </p>
+                </div>
               )}
             </div>
           </CardContent>

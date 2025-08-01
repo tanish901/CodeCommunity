@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
-import { Home as HomeIcon, Info, Mail, User, MessageSquare } from "lucide-react";
+import { Home as HomeIcon, Info, Mail, User, MessageSquare, BarChart3 } from "lucide-react";
 import { Tag } from "@shared/schema";
 
 export default function Home() {

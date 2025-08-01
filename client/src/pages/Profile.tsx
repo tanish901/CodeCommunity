@@ -71,34 +71,37 @@ export default function Profile() {
     gender: "",
   });
 
-  // Enhanced user data with profile details
-  const enhancedUserData = {
-    id: id || "",
-    username: "sarahchen",
-    email: "sarah.chen@example.com",
-    name: "Sarah Chen",
-    age: 28,
-    gender: "Female",
-    profession: "Senior Frontend Developer",
-    company: "TechCorp",
-    location: "San Francisco, CA",
-    bio: "Passionate frontend developer with 5+ years of experience building scalable web applications. I love React, TypeScript, and creating delightful user experiences. When I'm not coding, you can find me hiking or exploring new coffee shops.",
-    avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b29c?w=150&h=150&fit=crop&crop=face",
-    website: "https://sarahchen.dev",
-    github: "sarahchen",
-    twitter: "sarahchen_dev",
-    joinedDate: "2022-03-15",
-    followers: 1284,
-    following: 456,
-    skills: ["React", "TypeScript", "Node.js", "GraphQL", "AWS", "Docker"],
-    achievements: ["Top Contributor", "Featured Author", "Community Leader"],
-  };
 
-  // Fetch user profile (using enhanced data for demo)
+
+  // Fetch user profile from localStorage
   const { data: profileUser, isLoading: userLoading } = useQuery({
-    queryKey: ["/api/users", id],
+    queryKey: ["user", id],
     enabled: !!id,
-    select: () => enhancedUserData, // Mock enhanced data
+    queryFn: async () => {
+      const { storage } = await import("@/lib/localStorage");
+      const user = await storage.getUser(id);
+      if (!user) return null;
+      
+      // Enhance user data with additional profile details
+      return {
+        ...user,
+        age: 28,
+        gender: "Female",
+        profession: "Senior Frontend Developer",
+        company: "TechCorp",
+        location: user.location || "San Francisco, CA",
+        bio: user.bio || "Passionate developer with experience building scalable web applications.",
+        avatar: user.avatar || "https://images.unsplash.com/photo-1494790108755-2616b612b29c?w=150&h=150&fit=crop&crop=face",
+        website: "https://example.dev",
+        github: "username",
+        twitter: "username_dev",
+        joinedDate: user.createdAt ? new Date(user.createdAt).toISOString().split('T')[0] : "2022-03-15",
+        followers: 1284,
+        following: 456,
+        skills: ["React", "TypeScript", "Node.js", "GraphQL", "AWS", "Docker"],
+        achievements: ["Top Contributor", "Featured Author", "Community Leader"],
+      };
+    },
   });
 
   // Fetch user's articles

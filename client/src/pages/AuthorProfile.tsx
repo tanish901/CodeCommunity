@@ -62,12 +62,12 @@ export default function AuthorProfile() {
   // Fetch author's articles
   useEffect(() => {
     if (username) {
-      dispatch(fetchArticles({ author: username, published: true }));
+      dispatch(fetchArticles({ authorId: authorData.id, published: true }));
     }
   }, [dispatch, username]);
 
   const authorArticles = articles.filter(article => 
-    article.author?.toLowerCase() === username?.toLowerCase()
+    article.author?.username?.toLowerCase() === username?.toLowerCase()
   );
 
   const handleFollow = () => {

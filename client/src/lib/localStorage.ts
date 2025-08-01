@@ -1,5 +1,16 @@
 import { type User, type InsertUser, type Article, type InsertArticle, type Comment, type InsertComment, type Like, type Follow, type Tag, type ArticleWithAuthor } from "@shared/schema";
-import { randomUUID } from "crypto";
+
+// Fallback for crypto.randomUUID in browser
+const generateId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
 
 export interface IStorage {
   // Users
@@ -36,25 +47,50 @@ export interface IStorage {
   createTag(name: string): Promise<Tag>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private articles: Map<string, Article>;
-  private comments: Map<string, Comment>;
-  private likes: Map<string, Like>;
-  private follows: Map<string, Follow>;
-  private tags: Map<string, Tag>;
+export class LocalStorage implements IStorage {
+  private readonly STORAGE_KEYS = {
+    USERS: 'blog_users',
+    ARTICLES: 'blog_articles',
+    COMMENTS: 'blog_comments',
+    LIKES: 'blog_likes',
+    FOLLOWS: 'blog_follows',
+    TAGS: 'blog_tags',
+    INITIALIZED: 'blog_initialized'
+  };
 
   constructor() {
-    this.users = new Map();
-    this.articles = new Map();
-    this.comments = new Map();
-    this.likes = new Map();
-    this.follows = new Map();
-    this.tags = new Map();
-    
-    // Initialize with some popular tags and sample data
+    this.initializeData();
+  }
+
+  private getFromStorage<T>(key: string): Map<string, T> {
+    try {
+      const data = localStorage.getItem(key);
+      if (!data) return new Map();
+      const parsed = JSON.parse(data);
+      return new Map(Object.entries(parsed));
+    } catch (error) {
+      console.error(`Error reading from localStorage key ${key}:`, error);
+      return new Map();
+    }
+  }
+
+  private saveToStorage<T>(key: string, map: Map<string, T>): void {
+    try {
+      const obj = Object.fromEntries(map);
+      localStorage.setItem(key, JSON.stringify(obj));
+    } catch (error) {
+      console.error(`Error saving to localStorage key ${key}:`, error);
+    }
+  }
+
+  private initializeData() {
+    const isInitialized = localStorage.getItem(this.STORAGE_KEYS.INITIALIZED);
+    if (isInitialized) return;
+
+    // Initialize with sample data
     this.initializeTags();
     this.initializeSampleData();
+    localStorage.setItem(this.STORAGE_KEYS.INITIALIZED, 'true');
   }
 
   private initializeTags() {
@@ -69,10 +105,13 @@ export class MemStorage implements IStorage {
       { name: "opensource", color: "#22c55e" },
     ];
 
+    const tags = new Map<string, Tag>();
     defaultTags.forEach(tag => {
-      const id = randomUUID();
-      this.tags.set(id, { id, ...tag, description: "", articlesCount: 0 });
+      const id = generateId();
+      tags.set(id, { id, ...tag, description: "", articlesCount: 0 });
     });
+    
+    this.saveToStorage(this.STORAGE_KEYS.TAGS, tags);
   }
 
   private async initializeSampleData() {
@@ -295,19 +334,23 @@ These modern techniques help create more responsive and maintainable designs.`,
   }
 
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const users = this.getFromStorage<User>(this.STORAGE_KEYS.USERS);
+    return users.get(id);
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.email === email);
+    const users = this.getFromStorage<User>(this.STORAGE_KEYS.USERS);
+    return Array.from(users.values()).find(user => user.email === email);
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
+    const users = this.getFromStorage<User>(this.STORAGE_KEYS.USERS);
+    return Array.from(users.values()).find(user => user.username === username);
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
+    const users = this.getFromStorage<User>(this.STORAGE_KEYS.USERS);
+    const id = generateId();
     const user: User = { 
       ...insertUser, 
       id, 
@@ -317,49 +360,59 @@ These modern techniques help create more responsive and maintainable designs.`,
       website: insertUser.website || null,
       createdAt: new Date() 
     };
-    this.users.set(id, user);
+    users.set(id, user);
+    this.saveToStorage(this.STORAGE_KEYS.USERS, users);
     return user;
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
-    const user = this.users.get(id);
+    const users = this.getFromStorage<User>(this.STORAGE_KEYS.USERS);
+    const user = users.get(id);
     if (!user) return undefined;
     
     const updatedUser = { ...user, ...updates };
-    this.users.set(id, updatedUser);
+    users.set(id, updatedUser);
+    this.saveToStorage(this.STORAGE_KEYS.USERS, users);
     return updatedUser;
   }
 
   async getArticle(id: string): Promise<ArticleWithAuthor | undefined> {
-    const article = this.articles.get(id);
+    const articles = this.getFromStorage<Article>(this.STORAGE_KEYS.ARTICLES);
+    const article = articles.get(id);
     if (!article) return undefined;
     
-    const author = this.users.get(article.authorId);
+    const users = this.getFromStorage<User>(this.STORAGE_KEYS.USERS);
+    const author = users.get(article.authorId);
     if (!author) return undefined;
 
-    const commentsCount = Array.from(this.comments.values()).filter(c => c.articleId === id).length;
+    const comments = this.getFromStorage<Comment>(this.STORAGE_KEYS.COMMENTS);
+    const commentsCount = Array.from(comments.values()).filter(c => c.articleId === id).length;
     
     return { ...article, author, commentsCount };
   }
 
   async getArticles(filters?: { authorId?: string; tag?: string; search?: string; published?: boolean }): Promise<ArticleWithAuthor[]> {
-    let articles = Array.from(this.articles.values());
+    const articles = this.getFromStorage<Article>(this.STORAGE_KEYS.ARTICLES);
+    const users = this.getFromStorage<User>(this.STORAGE_KEYS.USERS);
+    const comments = this.getFromStorage<Comment>(this.STORAGE_KEYS.COMMENTS);
+    
+    let articleList = Array.from(articles.values());
     
     if (filters?.published !== undefined) {
-      articles = articles.filter(a => a.published === filters.published);
+      articleList = articleList.filter(a => a.published === filters.published);
     }
     
     if (filters?.authorId) {
-      articles = articles.filter(a => a.authorId === filters.authorId);
+      articleList = articleList.filter(a => a.authorId === filters.authorId);
     }
     
     if (filters?.tag) {
-      articles = articles.filter(a => a.tags?.includes(filters.tag!));
+      articleList = articleList.filter(a => a.tags?.includes(filters.tag!));
     }
     
     if (filters?.search) {
       const search = filters.search.toLowerCase();
-      articles = articles.filter(a => 
+      articleList = articleList.filter(a => 
         a.title.toLowerCase().includes(search) || 
         a.content.toLowerCase().includes(search)
       );
@@ -367,10 +420,10 @@ These modern techniques help create more responsive and maintainable designs.`,
 
     const articlesWithAuthors: ArticleWithAuthor[] = [];
     
-    for (const article of articles) {
-      const author = this.users.get(article.authorId);
+    for (const article of articleList) {
+      const author = users.get(article.authorId);
       if (author) {
-        const commentsCount = Array.from(this.comments.values()).filter(c => c.articleId === article.id).length;
+        const commentsCount = Array.from(comments.values()).filter(c => c.articleId === article.id).length;
         articlesWithAuthors.push({ ...article, author, commentsCount });
       }
     }
@@ -379,7 +432,10 @@ These modern techniques help create more responsive and maintainable designs.`,
   }
 
   async createArticle(insertArticle: InsertArticle): Promise<Article> {
-    const id = randomUUID();
+    const articles = this.getFromStorage<Article>(this.STORAGE_KEYS.ARTICLES);
+    const tags = this.getFromStorage<Tag>(this.STORAGE_KEYS.TAGS);
+    
+    const id = generateId();
     const article: Article = { 
       ...insertArticle, 
       id, 
@@ -392,40 +448,52 @@ These modern techniques help create more responsive and maintainable designs.`,
       createdAt: new Date(),
       updatedAt: new Date()
     };
-    this.articles.set(id, article);
+    articles.set(id, article);
+    this.saveToStorage(this.STORAGE_KEYS.ARTICLES, articles);
     
     // Update tag counts
     if (article.tags) {
       for (const tagName of article.tags) {
-        const tag = Array.from(this.tags.values()).find(t => t.name === tagName);
+        const tag = Array.from(tags.values()).find(t => t.name === tagName);
         if (tag) {
           tag.articlesCount = (tag.articlesCount || 0) + 1;
         }
       }
+      this.saveToStorage(this.STORAGE_KEYS.TAGS, tags);
     }
     
     return article;
   }
 
   async updateArticle(id: string, updates: Partial<Article>): Promise<Article | undefined> {
-    const article = this.articles.get(id);
+    const articles = this.getFromStorage<Article>(this.STORAGE_KEYS.ARTICLES);
+    const article = articles.get(id);
     if (!article) return undefined;
     
     const updatedArticle = { ...article, ...updates, updatedAt: new Date() };
-    this.articles.set(id, updatedArticle);
+    articles.set(id, updatedArticle);
+    this.saveToStorage(this.STORAGE_KEYS.ARTICLES, articles);
     return updatedArticle;
   }
 
   async deleteArticle(id: string): Promise<boolean> {
-    return this.articles.delete(id);
+    const articles = this.getFromStorage<Article>(this.STORAGE_KEYS.ARTICLES);
+    const deleted = articles.delete(id);
+    if (deleted) {
+      this.saveToStorage(this.STORAGE_KEYS.ARTICLES, articles);
+    }
+    return deleted;
   }
 
   async getCommentsByArticleId(articleId: string): Promise<(Comment & { author: User })[]> {
-    const comments = Array.from(this.comments.values()).filter(c => c.articleId === articleId);
+    const comments = this.getFromStorage<Comment>(this.STORAGE_KEYS.COMMENTS);
+    const users = this.getFromStorage<User>(this.STORAGE_KEYS.USERS);
+    
+    const articleComments = Array.from(comments.values()).filter(c => c.articleId === articleId);
     const commentsWithAuthors = [];
     
-    for (const comment of comments) {
-      const author = this.users.get(comment.authorId);
+    for (const comment of articleComments) {
+      const author = users.get(comment.authorId);
       if (author) {
         commentsWithAuthors.push({ ...comment, author });
       }
@@ -435,101 +503,129 @@ These modern techniques help create more responsive and maintainable designs.`,
   }
 
   async createComment(insertComment: InsertComment): Promise<Comment> {
-    const id = randomUUID();
+    const comments = this.getFromStorage<Comment>(this.STORAGE_KEYS.COMMENTS);
+    const id = generateId();
     const comment: Comment = { 
       ...insertComment, 
       id, 
       parentId: insertComment.parentId ?? null,
       createdAt: new Date() 
     };
-    this.comments.set(id, comment);
+    comments.set(id, comment);
+    this.saveToStorage(this.STORAGE_KEYS.COMMENTS, comments);
     return comment;
   }
 
   async deleteComment(id: string): Promise<boolean> {
-    return this.comments.delete(id);
+    const comments = this.getFromStorage<Comment>(this.STORAGE_KEYS.COMMENTS);
+    const deleted = comments.delete(id);
+    if (deleted) {
+      this.saveToStorage(this.STORAGE_KEYS.COMMENTS, comments);
+    }
+    return deleted;
   }
 
   async toggleLike(userId: string, articleId: string): Promise<{ liked: boolean; likesCount: number }> {
-    const existingLike = Array.from(this.likes.values()).find(l => l.userId === userId && l.articleId === articleId);
+    const likes = this.getFromStorage<Like>(this.STORAGE_KEYS.LIKES);
+    const articles = this.getFromStorage<Article>(this.STORAGE_KEYS.ARTICLES);
+    
+    const existingLike = Array.from(likes.values()).find(l => l.userId === userId && l.articleId === articleId);
     
     if (existingLike) {
-      this.likes.delete(existingLike.id);
-      const article = this.articles.get(articleId);
+      likes.delete(existingLike.id);
+      const article = articles.get(articleId);
       if (article) {
         article.likes = Math.max(0, (article.likes || 0) - 1);
-        this.articles.set(articleId, article);
+        articles.set(articleId, article);
+        this.saveToStorage(this.STORAGE_KEYS.ARTICLES, articles);
       }
+      this.saveToStorage(this.STORAGE_KEYS.LIKES, likes);
       return { liked: false, likesCount: article?.likes || 0 };
     } else {
-      const id = randomUUID();
+      const id = generateId();
       const like: Like = { id, userId, articleId, createdAt: new Date() };
-      this.likes.set(id, like);
+      likes.set(id, like);
       
-      const article = this.articles.get(articleId);
+      const article = articles.get(articleId);
       if (article) {
         article.likes = (article.likes || 0) + 1;
-        this.articles.set(articleId, article);
+        articles.set(articleId, article);
+        this.saveToStorage(this.STORAGE_KEYS.ARTICLES, articles);
       }
+      this.saveToStorage(this.STORAGE_KEYS.LIKES, likes);
       return { liked: true, likesCount: article?.likes || 0 };
     }
   }
 
   async getUserLikes(userId: string): Promise<string[]> {
-    return Array.from(this.likes.values())
+    const likes = this.getFromStorage<Like>(this.STORAGE_KEYS.LIKES);
+    return Array.from(likes.values())
       .filter(l => l.userId === userId)
       .map(l => l.articleId);
   }
 
   async toggleFollow(followerId: string, followingId: string): Promise<{ following: boolean }> {
-    const existingFollow = Array.from(this.follows.values()).find(f => f.followerId === followerId && f.followingId === followingId);
+    const follows = this.getFromStorage<Follow>(this.STORAGE_KEYS.FOLLOWS);
+    const existingFollow = Array.from(follows.values()).find(f => f.followerId === followerId && f.followingId === followingId);
     
     if (existingFollow) {
-      this.follows.delete(existingFollow.id);
+      follows.delete(existingFollow.id);
+      this.saveToStorage(this.STORAGE_KEYS.FOLLOWS, follows);
       return { following: false };
     } else {
-      const id = randomUUID();
+      const id = generateId();
       const follow: Follow = { id, followerId, followingId, createdAt: new Date() };
-      this.follows.set(id, follow);
+      follows.set(id, follow);
+      this.saveToStorage(this.STORAGE_KEYS.FOLLOWS, follows);
       return { following: true };
     }
   }
 
   async getFollowers(userId: string): Promise<User[]> {
-    const followerIds = Array.from(this.follows.values())
+    const follows = this.getFromStorage<Follow>(this.STORAGE_KEYS.FOLLOWS);
+    const users = this.getFromStorage<User>(this.STORAGE_KEYS.USERS);
+    
+    const followerIds = Array.from(follows.values())
       .filter(f => f.followingId === userId)
       .map(f => f.followerId);
     
-    return followerIds.map(id => this.users.get(id)).filter(Boolean) as User[];
+    return followerIds.map(id => users.get(id)).filter(Boolean) as User[];
   }
 
   async getFollowing(userId: string): Promise<User[]> {
-    const followingIds = Array.from(this.follows.values())
+    const follows = this.getFromStorage<Follow>(this.STORAGE_KEYS.FOLLOWS);
+    const users = this.getFromStorage<User>(this.STORAGE_KEYS.USERS);
+    
+    const followingIds = Array.from(follows.values())
       .filter(f => f.followerId === userId)
       .map(f => f.followingId);
     
-    return followingIds.map(id => this.users.get(id)).filter(Boolean) as User[];
+    return followingIds.map(id => users.get(id)).filter(Boolean) as User[];
   }
 
   async getTags(): Promise<Tag[]> {
-    return Array.from(this.tags.values()).sort((a, b) => a.name.localeCompare(b.name));
+    const tags = this.getFromStorage<Tag>(this.STORAGE_KEYS.TAGS);
+    return Array.from(tags.values()).sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async getPopularTags(limit = 5): Promise<Tag[]> {
-    return Array.from(this.tags.values())
+    const tags = this.getFromStorage<Tag>(this.STORAGE_KEYS.TAGS);
+    return Array.from(tags.values())
       .sort((a, b) => (b.articlesCount || 0) - (a.articlesCount || 0))
       .slice(0, limit);
   }
 
   async createTag(name: string): Promise<Tag> {
-    const existing = Array.from(this.tags.values()).find(t => t.name === name);
+    const tags = this.getFromStorage<Tag>(this.STORAGE_KEYS.TAGS);
+    const existing = Array.from(tags.values()).find(t => t.name === name);
     if (existing) return existing;
     
-    const id = randomUUID();
+    const id = generateId();
     const tag: Tag = { id, name, description: "", color: "#3b82f6", articlesCount: 0 };
-    this.tags.set(id, tag);
+    tags.set(id, tag);
+    this.saveToStorage(this.STORAGE_KEYS.TAGS, tags);
     return tag;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new LocalStorage();

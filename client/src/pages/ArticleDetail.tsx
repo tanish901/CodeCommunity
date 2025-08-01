@@ -228,7 +228,7 @@ export default function ArticleDetail() {
             {/* Tags */}
             {currentArticle.tags && currentArticle.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-8">
-                {currentArticle.tags.map((tag) => (
+                {currentArticle.tags.map((tag: string) => (
                   <span key={tag} className={getTagClassName(tag)}>
                     #{tag}
                   </span>
@@ -238,7 +238,7 @@ export default function ArticleDetail() {
 
             {/* Content */}
             <div className="article-content prose prose-slate max-w-none">
-              {currentArticle.content.split('\n').map((paragraph, index) => (
+              {currentArticle.content.split('\n').map((paragraph: string, index: number) => (
                 <p key={index} className="mb-4 text-slate-700 leading-relaxed">
                   {paragraph}
                 </p>

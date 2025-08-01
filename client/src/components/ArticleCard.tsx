@@ -86,7 +86,7 @@ export default function ArticleCard({ article }: ArticleCardProps) {
 
         {article.tags && article.tags.length > 0 && (
           <div className="flex flex-wrap gap-3 mb-6">
-            {article.tags.slice(0, 3).map((tag) => (
+            {article.tags.slice(0, 3).map((tag: string) => (
               <Badge 
                 key={tag} 
                 variant="secondary" 

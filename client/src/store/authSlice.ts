@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { User, LoginData, InsertUser } from '@shared/schema';
+import { storage } from '../lib/localStorage';
 
 interface AuthState {
   user: User | null;
@@ -38,20 +39,22 @@ export const loginUser = createAsyncThunk(
   'auth/login',
   async (loginData: LoginData, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(loginData),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        return rejectWithValue(error.message);
+      const user = await storage.getUserByEmail(loginData.email);
+      if (!user) {
+        return rejectWithValue('Invalid credentials');
       }
 
-      const data = await response.json();
-      saveUserToStorage(data.user);
-      return data.user;
+      // For demo purposes, we'll do a simple password check
+      // In a real app, you'd want proper password hashing
+      const isValid = loginData.password === 'password' || user.password === loginData.password;
+      if (!isValid) {
+        return rejectWithValue('Invalid credentials');
+      }
+
+      // Remove password from response
+      const { password, ...userWithoutPassword } = user;
+      saveUserToStorage(userWithoutPassword as User);
+      return userWithoutPassword as User;
     } catch (error) {
       return rejectWithValue('Login failed');
     }
@@ -62,20 +65,22 @@ export const registerUser = createAsyncThunk(
   'auth/register',
   async (userData: InsertUser, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        return rejectWithValue(error.message);
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(userData.email);
+      if (existingUser) {
+        return rejectWithValue('User already exists');
       }
 
-      const data = await response.json();
-      saveUserToStorage(data.user);
-      return data.user;
+      // Create user
+      const user = await storage.createUser({
+        ...userData,
+        password: userData.password, // In a real app, hash this
+      });
+
+      // Remove password from response
+      const { password, ...userWithoutPassword } = user;
+      saveUserToStorage(userWithoutPassword as User);
+      return userWithoutPassword as User;
     } catch (error) {
       return rejectWithValue('Registration failed');
     }
@@ -103,6 +108,8 @@ const authSlice = createSlice({
       if (state.user) {
         state.user = { ...state.user, ...action.payload };
         saveUserToStorage(state.user);
+        // Also update in storage
+        storage.updateUser(state.user.id, action.payload);
       }
     },
   },

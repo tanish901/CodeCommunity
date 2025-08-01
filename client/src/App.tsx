@@ -15,6 +15,7 @@ import ArticleDetail from "@/pages/ArticleDetail";
 import Notifications from "@/pages/Notifications";
 import CreatePost from "@/pages/CreatePost";
 import AuthorProfile from "@/pages/AuthorProfile";
+import Forum from "@/pages/Forum";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -55,6 +56,11 @@ function Router() {
       <Route path="/author/:username">
         <ProtectedRoute>
           <AuthorProfile />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/forums/:slug">
+        <ProtectedRoute>
+          <Forum />
         </ProtectedRoute>
       </Route>
       <Route component={NotFound} />

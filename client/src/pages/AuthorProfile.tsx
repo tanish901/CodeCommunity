@@ -3,6 +3,9 @@ import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useAppSelector, useAppDispatch } from "@/store";
 import { fetchArticles } from "@/store/articlesSlice";
+import { setProfile } from "@/store/usersSlice";
+import { followUser, unfollowUser } from "@/store/authSlice";
+import { getUserByUsername } from "@/lib/userService";
 import Layout from "@/components/Layout";
 import ArticleCard from "@/components/ArticleCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,48 +34,60 @@ import { formatDistanceToNow } from "date-fns";
 
 export default function AuthorProfile() {
   const { username } = useParams<{ username: string }>();
-  const { user: currentUser } = useAppSelector((state) => state.auth);
+  const { user: currentUser, following } = useAppSelector((state) => state.auth);
   const { articles, loading } = useAppSelector((state) => state.articles);
+  const { profiles } = useAppSelector((state) => state.users);
   const dispatch = useAppDispatch();
-  const [isFollowing, setIsFollowing] = useState(false);
 
-  // Mock author data - in a real app this would come from API
-  const authorData = {
-    id: "author-123",
-    username: username || "johndoe",
-    name: "John Doe",
-    email: "john.doe@example.com",
-    bio: "Senior Software Engineer passionate about web technologies, open source, and building developer tools. I write about React, Node.js, and modern web development practices.",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-    location: "New York, NY",
-    website: "https://johndoe.dev",
-    github: "johndoe",
-    twitter: "johndoe_dev",
-    joinedDate: "2021-08-15",
-    followers: 2847,
-    following: 329,
-    totalViews: 125483,
-    totalLikes: 3921,
-    articlesCount: 24,
-    achievements: ["Top Contributor", "Featured Author"],
-    skills: ["JavaScript", "React", "Node.js", "TypeScript", "Python", "AWS"],
-    isVerified: true,
-  };
+  // Get author data from store or fetch if not available
+  const authorData = profiles[username || ""] || getUserByUsername(username || "");
+
+  // Check if current user is following this author
+  const isFollowing = currentUser && authorData ? following.includes(authorData.id) : false;
 
   // Fetch author's articles
   useEffect(() => {
-    if (username) {
+    if (username && authorData) {
       dispatch(fetchArticles({ authorId: authorData.id, published: true }));
     }
-  }, [dispatch, username]);
+  }, [dispatch, username, authorData]);
+
+  // Load author profile into store if not already there
+  useEffect(() => {
+    if (username && authorData && !profiles[username]) {
+      dispatch(setProfile(authorData));
+    }
+  }, [username, authorData, profiles, dispatch]);
 
   const authorArticles = articles.filter(article => 
     article.author?.username?.toLowerCase() === username?.toLowerCase()
   );
 
   const handleFollow = () => {
-    setIsFollowing(!isFollowing);
+    if (!currentUser || !authorData) return;
+
+    if (isFollowing) {
+      dispatch(unfollowUser(authorData.id));
+    } else {
+      dispatch(followUser(authorData.id));
+    }
   };
+
+  if (!authorData) {
+    return (
+      <Layout>
+        <div className="container max-w-7xl mx-auto px-4 py-8">
+          <Card className="border-0 shadow-xl bg-card/50 backdrop-blur-sm">
+            <CardContent className="p-8 text-center">
+              <Users size={64} className="mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Author not found</h3>
+              <p className="text-muted-foreground">The author you're looking for doesn't exist.</p>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

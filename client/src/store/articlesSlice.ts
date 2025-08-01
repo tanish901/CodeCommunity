@@ -7,7 +7,7 @@ interface ArticlesState {
   currentArticle: ArticleWithAuthor | null;
   loading: boolean;
   error: string | null;
-  filter: 'relevant' | 'latest' | 'top';
+  filter: 'relevant' | 'latest' | 'top' | 'following';
   searchQuery: string;
   selectedTag: string | null;
 }

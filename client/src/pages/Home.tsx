@@ -34,8 +34,10 @@ export default function Home() {
     queryKey: ["users", "recommended"],
     queryFn: async () => {
       const allUsers = await storage.getAllUsers();
-      // Return the first 3 users as recommended
-      return allUsers.slice(0, 3);
+      // Return the first 5 users as recommended, excluding current user
+      return allUsers
+        .filter(user => user.id !== currentUser?.id)
+        .slice(0, 5);
     },
   });
 
@@ -191,49 +193,56 @@ export default function Home() {
               <CardHeader className="pb-4">
                 <CardTitle className="text-xl font-bold text-foreground">Recommended Authors</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-4">
                 {recommendedUsers.length > 0 ? (
                   recommendedUsers.map((author) => (
-                    <div key={author.id} className="flex items-center space-x-4">
-                      <div 
-                        className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/20 transition-colors"
-                        onClick={() => setLocation(`/author/${author.username}`)}
-                      >
-                        {author.avatar ? (
-                          <img 
-                            src={author.avatar} 
-                            alt={author.username} 
-                            className="w-12 h-12 rounded-full object-cover"
-                          />
-                        ) : (
-                          <User size={18} className="text-primary" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p 
-                          className="font-semibold text-foreground cursor-pointer hover:text-primary transition-colors"
-                          onClick={() => setLocation(`/author/${author.username}`)}
+                    <div key={author.id} className="p-4 border border-border rounded-xl hover:bg-muted/30 transition-all duration-200 cursor-pointer group">
+                      <div className="flex items-start space-x-3">
+                        <div 
+                          className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/20 transition-colors flex-shrink-0"
+                          onClick={() => setLocation(`/profile/${author.id}`)}
                         >
-                          {author.username}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{author.bio || "No bio available"}</p>
+                          {author.avatar ? (
+                            <img 
+                              src={author.avatar} 
+                              alt={author.username} 
+                              className="w-14 h-14 rounded-full object-cover"
+                            />
+                          ) : (
+                            <User size={20} className="text-primary" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p 
+                            className="font-semibold text-foreground cursor-pointer hover:text-primary transition-colors text-base mb-1"
+                            onClick={() => setLocation(`/profile/${author.id}`)}
+                          >
+                            {author.name || author.username}
+                          </p>
+                          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                            {author.bio || "Passionate developer sharing knowledge and experiences."}
+                          </p>
+                          <Button 
+                            size="sm" 
+                            variant={following.includes(author.id) ? "default" : "outline"}
+                            className={`rounded-full transition-colors text-xs ${
+                              following.includes(author.id) 
+                                ? "bg-muted text-foreground hover:bg-muted/80" 
+                                : "hover:bg-primary hover:text-primary-foreground"
+                            }`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleFollow(author.id);
+                            }}
+                          >
+                            {following.includes(author.id) ? "Following" : "Follow"}
+                          </Button>
+                        </div>
                       </div>
-                      <Button 
-                        size="sm" 
-                        variant={following.includes(author.id) ? "default" : "outline"}
-                        className={`rounded-full transition-colors ${
-                          following.includes(author.id) 
-                            ? "bg-muted text-foreground hover:bg-muted/80" 
-                            : "hover:bg-primary hover:text-primary-foreground"
-                        }`}
-                        onClick={() => handleFollow(author.id)}
-                      >
-                        {following.includes(author.id) ? "Following" : "Follow"}
-                      </Button>
                     </div>
                   ))
                 ) : (
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-muted-foreground p-4 text-center">
                     <p>No recommended authors available</p>
                   </div>
                 )}

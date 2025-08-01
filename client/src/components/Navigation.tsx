@@ -23,7 +23,6 @@ export default function Navigation() {
   const [, setLocation] = useLocation();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -36,13 +35,7 @@ export default function Navigation() {
 
   return (
     <>
-      {/* Blur Overlay for Search Focus - Fixed z-index */}
-      {isSearchFocused && (
-        <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm pointer-events-none"
-          style={{ zIndex: 30 }}
-        />
-      )}
+
       
       <nav className="bg-card border-b border-border sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -57,22 +50,16 @@ export default function Navigation() {
               </div>
             </Link>
 
-            {/* Search Bar - Higher z-index to appear above blur */}
-            <div className="flex-1 max-w-xl mx-8 relative" style={{ zIndex: 40 }}>
+            {/* Search Bar */}
+            <div className="flex-1 max-w-xl mx-8 relative">
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
                 <Input
                   type="text"
                   placeholder="Search articles, tags, users..."
-                  className={`pl-12 h-11 bg-muted/50 border-0 rounded-full transition-all duration-300 ${
-                    isSearchFocused 
-                      ? "bg-background shadow-xl ring-2 ring-primary/20 scale-105" 
-                      : "hover:bg-muted/70"
-                  }`}
+                  className="pl-12 h-11 bg-muted/50 border-0 rounded-full transition-all duration-300 hover:bg-muted/70 focus:bg-background focus:shadow-lg focus:ring-2 focus:ring-primary/20"
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
-                  onFocus={() => setIsSearchFocused(true)}
-                  onBlur={() => setIsSearchFocused(false)}
                 />
               </div>
             </div>

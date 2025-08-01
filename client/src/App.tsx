@@ -12,6 +12,7 @@ import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
 import Profile from "@/pages/Profile";
 import ArticleDetail from "@/pages/ArticleDetail";
+import Notifications from "@/pages/Notifications";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -37,6 +38,11 @@ function Router() {
       <Route path="/article/:id">
         <ProtectedRoute>
           <ArticleDetail />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/notifications">
+        <ProtectedRoute>
+          <Notifications />
         </ProtectedRoute>
       </Route>
       <Route component={NotFound} />

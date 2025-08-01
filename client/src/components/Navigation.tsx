@@ -84,24 +84,49 @@ export default function Navigation() {
                   <div className="p-4">
                     <h3 className="font-semibold text-sm mb-3">Notifications</h3>
                     <div className="space-y-3">
-                      <div className="text-sm p-3 bg-muted/50 rounded-lg">
+                      <div 
+                        className="text-sm p-3 bg-muted/50 rounded-lg hover:bg-muted/70 cursor-pointer transition-colors"
+                        onClick={() => {
+                          setLocation('/article/54c22c14-d797-4417-a4e6-c4e68398b20b');
+                          setShowNotifications(false);
+                        }}
+                      >
                         <p className="font-medium">New comment on your article</p>
                         <p className="text-muted-foreground text-xs mt-1">Someone commented on "Getting Started with React 18"</p>
                         <p className="text-muted-foreground text-xs mt-1">2 hours ago</p>
                       </div>
-                      <div className="text-sm p-3 bg-muted/50 rounded-lg">
+                      <div 
+                        className="text-sm p-3 bg-muted/50 rounded-lg hover:bg-muted/70 cursor-pointer transition-colors"
+                        onClick={() => {
+                          setLocation('/article/54c22c14-d797-4417-a4e6-c4e68398b20b');
+                          setShowNotifications(false);
+                        }}
+                      >
                         <p className="font-medium">Your article was liked</p>
                         <p className="text-muted-foreground text-xs mt-1">Alex Kim liked your article about CSS techniques</p>
                         <p className="text-muted-foreground text-xs mt-1">5 hours ago</p>
                       </div>
-                      <div className="text-sm p-3 bg-muted/50 rounded-lg">
+                      <div 
+                        className="text-sm p-3 bg-muted/50 rounded-lg hover:bg-muted/70 cursor-pointer transition-colors"
+                        onClick={() => {
+                          setLocation('/profile/sarahchen');
+                          setShowNotifications(false);
+                        }}
+                      >
                         <p className="font-medium">New follower</p>
                         <p className="text-muted-foreground text-xs mt-1">Sarah Chen started following you</p>
                         <p className="text-muted-foreground text-xs mt-1">1 day ago</p>
                       </div>
                     </div>
                     <div className="mt-4 pt-2 border-t">
-                      <Button variant="ghost" className="w-full text-xs">
+                      <Button 
+                        variant="ghost" 
+                        className="w-full text-xs"
+                        onClick={() => {
+                          setLocation('/notifications');
+                          setShowNotifications(false);
+                        }}
+                      >
                         View all notifications
                       </Button>
                     </div>

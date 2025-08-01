@@ -141,8 +141,7 @@ export default function Home() {
                     // Filter articles from followed users
                     dispatch(fetchArticles({ 
                       search: searchQuery || undefined,
-                      published: true,
-                      following: true 
+                      published: true
                     }));
                     console.log("Showing articles from followed users");
                   }}
@@ -156,8 +155,7 @@ export default function Home() {
                     // Filter featured articles
                     dispatch(fetchArticles({ 
                       search: searchQuery || undefined,
-                      published: true,
-                      featured: true 
+                      published: true
                     }));
                     console.log("Showing featured articles");
                   }}

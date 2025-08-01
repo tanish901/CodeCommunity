@@ -23,61 +23,83 @@ const initialState: AuthState = storedAuth
       loading: false,
     };
 
+// Helper function to get stored users
+const getStoredUsers = (): Record<string, User> => {
+  const stored = localStorage.getItem('users');
+  if (stored) {
+    const users = JSON.parse(stored);
+    // Convert string dates back to Date objects
+    Object.keys(users).forEach(email => {
+      if (users[email].createdAt) {
+        users[email].createdAt = new Date(users[email].createdAt);
+      }
+    });
+    return users;
+  }
+  
+  // Return default mock users if no stored users exist
+  return {
+    'sarah.chen@example.com': {
+      id: 'user-1',
+      username: 'sarahchen',
+      email: 'sarah.chen@example.com',
+      password: 'password123',
+      bio: 'Passionate frontend developer',
+      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b29c?w=150&h=150&fit=crop&crop=face',
+      location: 'San Francisco, CA',
+      website: 'https://sarahchen.dev',
+      createdAt: new Date('2022-03-15'),
+    },
+    'michael.rodriguez@example.com': {
+      id: 'user-2',
+      username: 'michaelr',
+      email: 'michael.rodriguez@example.com',
+      password: 'password123',
+      bio: 'Fullstack developer',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+      location: 'New York, NY',
+      website: 'https://michaelr.dev',
+      createdAt: new Date('2021-08-15'),
+    },
+    'alex.kim@example.com': {
+      id: 'user-3',
+      username: 'alexkim',
+      email: 'alex.kim@example.com',
+      password: 'password123',
+      bio: 'Frontend specialist',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      location: 'Seattle, WA',
+      website: 'https://alexkim.dev',
+      createdAt: new Date('2023-01-10'),
+    },
+    'john.doe@example.com': {
+      id: 'user-4',
+      username: 'johndoe',
+      email: 'john.doe@example.com',
+      password: 'password123',
+      bio: 'Senior Software Engineer',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+      location: 'New York, NY',
+      website: 'https://johndoe.dev',
+      createdAt: new Date('2021-08-15'),
+    },
+  };
+};
+
+// Helper function to store users
+const storeUsers = (users: Record<string, User>) => {
+  localStorage.setItem('users', JSON.stringify(users));
+};
+
 // Async thunk for login
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async (loginData: LoginData, { rejectWithValue }) => {
     try {
-      // Simulate API call - in a real app, this would be an actual API request
-      // For now, we'll use mock authentication
-      const mockUsers = {
-        'sarah.chen@example.com': {
-          id: 'user-1',
-          username: 'sarahchen',
-          email: 'sarah.chen@example.com',
-          password: 'password123',
-          bio: 'Passionate frontend developer',
-          avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b29c?w=150&h=150&fit=crop&crop=face',
-          location: 'San Francisco, CA',
-          website: 'https://sarahchen.dev',
-          createdAt: new Date('2022-03-15'),
-        },
-        'michael.rodriguez@example.com': {
-          id: 'user-2',
-          username: 'michaelr',
-          email: 'michael.rodriguez@example.com',
-          password: 'password123',
-          bio: 'Fullstack developer',
-          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-          location: 'New York, NY',
-          website: 'https://michaelr.dev',
-          createdAt: new Date('2021-08-15'),
-        },
-        'alex.kim@example.com': {
-          id: 'user-3',
-          username: 'alexkim',
-          email: 'alex.kim@example.com',
-          password: 'password123',
-          bio: 'Frontend specialist',
-          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-          location: 'Seattle, WA',
-          website: 'https://alexkim.dev',
-          createdAt: new Date('2023-01-10'),
-        },
-        'john.doe@example.com': {
-          id: 'user-4',
-          username: 'johndoe',
-          email: 'john.doe@example.com',
-          password: 'password123',
-          bio: 'Senior Software Engineer',
-          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-          location: 'New York, NY',
-          website: 'https://johndoe.dev',
-          createdAt: new Date('2021-08-15'),
-        },
-      };
-
-      const user = mockUsers[loginData.email as keyof typeof mockUsers];
+      // Get stored users
+      const users = getStoredUsers();
+      
+      const user = users[loginData.email];
       
       if (!user || user.password !== loginData.password) {
         throw new Error('Invalid email or password');
@@ -102,14 +124,25 @@ export const registerUser = createAsyncThunk(
   'auth/registerUser',
   async (registerData: { username: string; email: string; password: string }, { rejectWithValue }) => {
     try {
-      // Simulate API call - in a real app, this would be an actual API request
-      // For now, we'll use mock registration
+      // Get stored users
+      const users = getStoredUsers();
+      
+      // Check if user already exists
+      if (users[registerData.email]) {
+        throw new Error('User with this email already exists');
+      }
+      
+      // Check if username is already taken
+      const existingUser = Object.values(users).find(user => user.username === registerData.username);
+      if (existingUser) {
+        throw new Error('Username is already taken');
+      }
       
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Create a new user
-      const newUser = {
+      const newUser: User = {
         id: `user-${Date.now()}`,
         username: registerData.username,
         email: registerData.email,
@@ -120,6 +153,10 @@ export const registerUser = createAsyncThunk(
         website: null,
         createdAt: new Date(),
       };
+
+      // Store the new user
+      users[registerData.email] = newUser;
+      storeUsers(users);
 
       // Return user data and mock token
       return {
@@ -153,6 +190,8 @@ const authSlice = createSlice({
       state.error = null;
       state.loading = false;
       persistState(state);
+      // Note: We don't clear users from localStorage on logout
+      // as other users might still need to login
     },
     followUser: (state, action: PayloadAction<string>) => {
       if (!state.following.includes(action.payload)) {

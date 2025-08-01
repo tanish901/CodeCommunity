@@ -13,6 +13,8 @@ import Dashboard from "@/pages/Dashboard";
 import Profile from "@/pages/Profile";
 import ArticleDetail from "@/pages/ArticleDetail";
 import Notifications from "@/pages/Notifications";
+import CreatePost from "@/pages/CreatePost";
+import AuthorProfile from "@/pages/AuthorProfile";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -43,6 +45,16 @@ function Router() {
       <Route path="/notifications">
         <ProtectedRoute>
           <Notifications />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/create">
+        <ProtectedRoute>
+          <CreatePost />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/author/:username">
+        <ProtectedRoute>
+          <AuthorProfile />
         </ProtectedRoute>
       </Route>
       <Route component={NotFound} />

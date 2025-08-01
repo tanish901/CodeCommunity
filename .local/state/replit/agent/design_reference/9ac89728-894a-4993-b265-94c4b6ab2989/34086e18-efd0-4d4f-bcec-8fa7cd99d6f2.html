@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevCommunity - A Developer's Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#6366F1',
+                        accent: '#F59E0B'
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="font-inter bg-slate-50 text-slate-800">
+    
+    <!-- @COMPONENT: TopNavigation -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                            <i class="fas fa-code text-white text-sm"></i>
+                        </div>
+                        <span class="text-xl font-semibold text-slate-800">DevCommunity</span>
+                    </div>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="flex-1 max-w-lg mx-8">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                        <input 
+                            type="text" 
+                            placeholder="Search articles, tags, users..." 
+                            class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                            data-bind="searchQuery"
+                        >
+                    </div>
+                </div>
+
+                <!-- Right Navigation -->
+                <div class="flex items-center space-x-4">
+                    <button class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium" data-event="click:createPost">
+                        <i class="fas fa-plus mr-2"></i>Create Post
+                    </button>
+                    
+                    <button class="relative p-2 text-slate-600 hover:text-slate-800 transition-colors" data-event="click:showNotifications">
+                        <i class="fas fa-bell text-lg"></i>
+                        <span class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full" data-bind="hasNewNotifications"></span>
+                    </button>
+
+                    <div class="relative" data-component="UserDropdown">
+                        <button class="flex items-center space-x-2 p-2 rounded-lg hover:bg-slate-100 transition-colors" data-event="click:toggleUserMenu">
+                            <!-- User avatar placeholder representing a developer -->
+                            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=32&h=32" alt="User Avatar" class="w-8 h-8 rounded-full">
+                            <i class="fas fa-chevron-down text-xs text-slate-600"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <!-- @END_COMPONENT: TopNavigation -->
+
+    <!-- Main Layout -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="grid grid-cols-12 gap-6">
+            
+            <!-- @COMPONENT: LeftSidebar -->
+            <div class="col-span-12 lg:col-span-3">
+                <div class="bg-white rounded-xl border border-slate-200 p-6 sticky top-24">
+                    <!-- Navigation Links -->
+                    <nav class="space-y-2">
+                        <h3 class="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-4">Navigation</h3>
+                        <a href="#" class="flex items-center space-x-3 p-3 rounded-lg bg-primary/10 text-primary font-medium" data-route="/home">
+                            <i class="fas fa-home"></i>
+                            <span>Home</span>
+                        </a>
+                        <a href="#" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-100 text-slate-700 transition-colors" data-route="/about">
+                            <i class="fas fa-info-circle"></i>
+                            <span>About</span>
+                        </a>
+                        <a href="#" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-100 text-slate-700 transition-colors" data-route="/contact">
+                            <i class="fas fa-envelope"></i>
+                            <span>Contact</span>
+                        </a>
+                        <a href="#" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-100 text-slate-700 transition-colors" data-route="/dashboard">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </nav>
+
+                    <!-- Recommended Tags -->
+                    <div class="mt-8">
+                        <h3 class="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-4">Recommended Tags</h3>
+                        <div class="space-y-2">
+                            <!-- @MAP: recommendedTags.map(tag => ( -->
+                            <a href="#" class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 transition-colors" data-bind="tag.href">
+                                <span class="text-slate-700" data-bind="tag.name">#javascript</span>
+                                <span class="text-xs text-slate-500" data-bind="tag.count">1.2k</span>
+                            </a>
+                            <a href="#" class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 transition-colors">
+                                <span class="text-slate-700">#react</span>
+                                <span class="text-xs text-slate-500">980</span>
+                            </a>
+                            <a href="#" class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 transition-colors">
+                                <span class="text-slate-700">#webdev</span>
+                                <span class="text-xs text-slate-500">756</span>
+                            </a>
+                            <a href="#" class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 transition-colors">
+                                <span class="text-slate-700">#python</span>
+                                <span class="text-xs text-slate-500">643</span>
+                            </a>
+                            <a href="#" class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 transition-colors">
+                                <span class="text-slate-700">#devops</span>
+                                <span class="text-xs text-slate-500">425</span>
+                            </a>
+                            <!-- @END_MAP )) -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: LeftSidebar -->
+
+            <!-- @COMPONENT: MainContent -->
+            <div class="col-span-12 lg:col-span-6">
+                <div class="space-y-6">
+                    
+                    <!-- Filter Tabs -->
+                    <div class="bg-white rounded-xl border border-slate-200 p-1">
+                        <div class="flex space-x-1">
+                            <button class="flex-1 py-2 px-4 text-sm font-medium rounded-lg bg-primary text-white" data-filter="relevant">
+                                Relevant
+                            </button>
+                            <button class="flex-1 py-2 px-4 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-800 transition-colors" data-filter="latest">
+                                Latest
+                            </button>
+                            <button class="flex-1 py-2 px-4 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-800 transition-colors" data-filter="top">
+                                Top
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Featured Challenge Banner -->
+                    <div class="bg-gradient-to-r from-red-500 to-orange-500 rounded-xl p-6 text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-xl font-semibold mb-2">🏆 DEV Challenges</h2>
+                                <p class="text-red-100 mb-4">Take Redis to the next level 🚀</p>
+                                <div class="flex items-center space-x-4 text-sm">
+                                    <span>$3,000 in Prizes!</span>
+                                    <span>•</span>
+                                    <span>Jul 23 - Aug 10</span>
+                                </div>
+                            </div>
+                            <!-- Redis challenge logo representation -->
+                            <img src="https://images.unsplash.com/photo-1558655146-9f40138edfeb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=80&h=80" alt="Challenge Logo" class="w-20 h-20 rounded-lg">
+                        </div>
+                    </div>
+
+                    <!-- Articles Feed -->
+                    <div class="space-y-6">
+                        <!-- @MAP: articles.map(article => ( -->
+                        
+                        <!-- Article Card 1 -->
+                        <article class="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow">
+                            <!-- Article header with GitHub Copilot theme -->
+                            <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=300" alt="Developer workspace with multiple monitors" class="w-full h-48 object-cover">
+                            
+                            <div class="p-6">
+                                <div class="flex items-center space-x-3 mb-4">
+                                    <!-- Author profile image showing a professional developer -->
+                                    <img src="https://pixabay.com/get/g4c9cd012c272cd0ba8acdd11d3e85909e4d6ed0555dbde49c3d251fa103fd832b43c6729b9cf96a56846bf8bef399972e67cc4142ad26e45aab0f1d716376d6f_1280.jpg" alt="Sarah Siqueira" class="w-10 h-10 rounded-full">
+                                    <div>
+                                        <p class="font-medium text-slate-800" data-bind="article.author.name">Sarah Siqueira</p>
+                                        <p class="text-sm text-slate-500" data-bind="article.publishedAt">Jul 31</p>
+                                    </div>
+                                </div>
+                                
+                                <h2 class="text-xl font-semibold mb-3 text-slate-800 hover:text-primary cursor-pointer" data-bind="article.title">
+                                    Using GitHub Copilot to Manage Issues (and Save Time)
+                                </h2>
+                                
+                                <div class="flex flex-wrap gap-2 mb-4">
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">#githubcopilot</span>
+                                    <span class="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">#productivity</span>
+                                    <span class="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">#opensource</span>
+                                </div>
+                                
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-4 text-sm text-slate-600">
+                                        <button class="flex items-center space-x-1 hover:text-red-500 transition-colors" data-event="click:toggleLike">
+                                            <i class="far fa-heart"></i>
+                                            <span data-bind="article.likes">24</span>
+                                        </button>
+                                        <button class="flex items-center space-x-1 hover:text-blue-500 transition-colors" data-event="click:viewComments">
+                                            <i class="far fa-comment"></i>
+                                            <span data-bind="article.comments">5</span>
+                                        </button>
+                                        <span class="flex items-center space-x-1">
+                                            <i class="far fa-clock"></i>
+                                            <span data-bind="article.readTime">3 min read</span>
+                                        </span>
+                                    </div>
+                                    <button class="text-slate-400 hover:text-slate-600 transition-colors" data-event="click:bookmarkArticle">
+                                        <i class="far fa-bookmark"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </article>
+
+                        <!-- Article Card 2 -->
+                        <article class="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow">
+                            <!-- Tech workspace showing AI/ML development -->
+                            <img src="https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=300" alt="Modern tech workspace with AI development" class="w-full h-48 object-cover">
+                            
+                            <div class="p-6">
+                                <div class="flex items-center space-x-3 mb-4">
+                                    <!-- Author showing AI/ML researcher -->
+                                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=40&h=40" alt="Alain Airom" class="w-10 h-10 rounded-full">
+                                    <div>
+                                        <p class="font-medium text-slate-800">Alain Airom</p>
+                                        <p class="text-sm text-slate-500">Jul 31</p>
+                                    </div>
+                                </div>
+                                
+                                <h2 class="text-xl font-semibold mb-3 text-slate-800 hover:text-primary cursor-pointer">
+                                    My Local/Remote LLM Studio — watsonx.ai and Ollama (part 1)
+                                </h2>
+                                
+                                <div class="flex flex-wrap gap-2 mb-4">
+                                    <span class="px-3 py-1 bg-indigo-100 text-indigo-800 text-xs font-medium rounded-full">#watsonx</span>
+                                    <span class="px-3 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">#llm</span>
+                                    <span class="px-3 py-1 bg-teal-100 text-teal-800 text-xs font-medium rounded-full">#ai</span>
+                                </div>
+                                
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-4 text-sm text-slate-600">
+                                        <button class="flex items-center space-x-1 hover:text-red-500 transition-colors">
+                                            <i class="far fa-heart"></i>
+                                            <span>42</span>
+                                        </button>
+                                        <button class="flex items-center space-x-1 hover:text-blue-500 transition-colors">
+                                            <i class="far fa-comment"></i>
+                                            <span>8</span>
+                                        </button>
+                                        <span class="flex items-center space-x-1">
+                                            <i class="far fa-clock"></i>
+                                            <span>18 min read</span>
+                                        </span>
+                                    </div>
+                                    <button class="text-slate-400 hover:text-slate-600 transition-colors">
+                                        <i class="far fa-bookmark"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </article>
+
+                        <!-- Article Card 3 -->
+                        <article class="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow">
+                            <!-- Programming book or learning content -->
+                            <img src="https://images.unsplash.com/photo-1515879218367-8466d910aaa4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=300" alt="Programming books and code on screen" class="w-full h-48 object-cover">
+                            
+                            <div class="p-6">
+                                <div class="flex items-center space-x-3 mb-4">
+                                    <!-- Senior developer/author -->
+                                    <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=40&h=40" alt="Paul J. Lucas" class="w-10 h-10 rounded-full">
+                                    <div>
+                                        <p class="font-medium text-slate-800">Paul J. Lucas</p>
+                                        <p class="text-sm text-slate-500">Jul 31</p>
+                                    </div>
+                                </div>
+                                
+                                <h2 class="text-xl font-semibold mb-3 text-slate-800 hover:text-primary cursor-pointer">
+                                    "Why Learn C" Book Announcement
+                                </h2>
+                                
+                                <div class="flex flex-wrap gap-2 mb-4">
+                                    <span class="px-3 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">#c</span>
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">#programming</span>
+                                    <span class="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">#learning</span>
+                                </div>
+                                
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-4 text-sm text-slate-600">
+                                        <button class="flex items-center space-x-1 hover:text-red-500 transition-colors">
+                                            <i class="far fa-heart"></i>
+                                            <span>18</span>
+                                        </button>
+                                        <button class="flex items-center space-x-1 hover:text-blue-500 transition-colors">
+                                            <i class="far fa-comment"></i>
+                                            <span>4</span>
+                                        </button>
+                                        <span class="flex items-center space-x-1">
+                                            <i class="far fa-clock"></i>
+                                            <span>6 min read</span>
+                                        </span>
+                                    </div>
+                                    <button class="text-slate-400 hover:text-slate-600 transition-colors">
+                                        <i class="far fa-bookmark"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </article>
+
+                        <!-- Article Card 4 -->
+                        <article class="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow">
+                            <!-- Debugging/troubleshooting scene -->
+                            <img src="https://images.unsplash.com/photo-1551650975-87deedd944c3?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=300" alt="Developer debugging code with multiple screens" class="w-full h-48 object-cover">
+                            
+                            <div class="p-6">
+                                <div class="flex items-center space-x-3 mb-4">
+                                    <!-- Young enthusiastic developer -->
+                                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=40&h=40" alt="Nick K" class="w-10 h-10 rounded-full">
+                                    <div>
+                                        <p class="font-medium text-slate-800">Nick K</p>
+                                        <p class="text-sm text-slate-500">Jul 31</p>
+                                    </div>
+                                </div>
+                                
+                                <h2 class="text-xl font-semibold mb-3 text-slate-800 hover:text-primary cursor-pointer">
+                                    The Bug That Drove Me So Crazy, I Got Hired Just to Fix It
+                                </h2>
+                                
+                                <div class="flex flex-wrap gap-2 mb-4">
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">#webdev</span>
+                                    <span class="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">#programming</span>
+                                    <span class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">#javascript</span>
+                                </div>
+                                
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-4 text-sm text-slate-600">
+                                        <button class="flex items-center space-x-1 hover:text-red-500 transition-colors">
+                                            <i class="far fa-heart"></i>
+                                            <span>156</span>
+                                        </button>
+                                        <button class="flex items-center space-x-1 hover:text-blue-500 transition-colors">
+                                            <i class="far fa-comment"></i>
+                                            <span>23</span>
+                                        </button>
+                                        <span class="flex items-center space-x-1">
+                                            <i class="far fa-clock"></i>
+                                            <span>3 min read</span>
+                                        </span>
+                                    </div>
+                                    <button class="text-slate-400 hover:text-slate-600 transition-colors">
+                                        <i class="far fa-bookmark"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </article>
+                        
+                        <!-- @END_MAP )) -->
+                    </div>
+
+                    <!-- Load More Button -->
+                    <div class="text-center py-8">
+                        <button class="bg-white border border-slate-300 text-slate-700 px-6 py-3 rounded-lg hover:bg-slate-50 transition-colors font-medium" data-event="click:loadMoreArticles">
+                            Load More Articles
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: MainContent -->
+
+            <!-- @COMPONENT: RightSidebar -->
+            <div class="col-span-12 lg:col-span-3">
+                <div class="space-y-6 sticky top-24">
+                    
+                    <!-- Forums Section -->
+                    <div class="bg-white rounded-xl border border-slate-200 p-6">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4">Forums</h3>
+                        <div class="space-y-4">
+                            <div class="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer">
+                                <h4 class="font-medium text-slate-800 mb-1">What was your win this week?</h4>
+                                <p class="text-sm text-slate-600">1 comment</p>
+                            </div>
+                            <div class="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer">
+                                <h4 class="font-medium text-slate-800 mb-1">When did we start piling up so many tools just to manage an interface?</h4>
+                                <p class="text-sm text-slate-600">4 comments</p>
+                            </div>
+                            <div class="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer">
+                                <h4 class="font-medium text-slate-800 mb-1">Fine-Tuning vs Prompt Engineering: Which One Actually Saves You Money?</h4>
+                                <p class="text-sm text-slate-600">1 comment</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recommended Authors -->
+                    <div class="bg-white rounded-xl border border-slate-200 p-6">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4">Recommended Authors</h3>
+                        <div class="space-y-4">
+                            <!-- @MAP: recommendedAuthors.map(author => ( -->
+                            <div class="flex items-center space-x-3">
+                                <!-- Tech community leader representing diversity -->
+                                <img src="https://pixabay.com/get/gca72bbb92c10d17d09a6703dfed4801e94deb87dd9685cd588adcb8e2dc1e119163f6ccd8fe92b6d0c5bbcf5672bb8195b88464cb6294522740cb981f1af7502_1280.png" alt="Sarah Chen" class="w-10 h-10 rounded-full" data-bind="author.avatar">
+                                <div class="flex-1">
+                                    <p class="font-medium text-slate-800" data-bind="author.name">Sarah Chen</p>
+                                    <p class="text-sm text-slate-600" data-bind="author.title">DevOps enthusiast</p>
+                                </div>
+                                <button class="text-primary hover:text-blue-600 text-sm font-medium" data-event="click:followAuthor">Follow</button>
+                            </div>
+                            
+                            <div class="flex items-center space-x-3">
+                                <!-- Senior developer/mentor figure -->
+                                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=40&h=40" alt="Michael Rodriguez" class="w-10 h-10 rounded-full">
+                                <div class="flex-1">
+                                    <p class="font-medium text-slate-800">Michael Rodriguez</p>
+                                    <p class="text-sm text-slate-600">Fullstack developer</p>
+                                </div>
+                                <button class="text-primary hover:text-blue-600 text-sm font-medium">Follow</button>
+                            </div>
+                            
+                            <div class="flex items-center space-x-3">
+                                <!-- Young innovative developer -->
+                                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=40&h=40" alt="Alex Kim" class="w-10 h-10 rounded-full">
+                                <div class="flex-1">
+                                    <p class="font-medium text-slate-800">Alex Kim</p>
+                                    <p class="text-sm text-slate-600">Frontend specialist</p>
+                                </div>
+                                <button class="text-primary hover:text-blue-600 text-sm font-medium">Follow</button>
+                            </div>
+                            <!-- @END_MAP )) -->
+                        </div>
+                    </div>
+
+                    <!-- Trending Now -->
+                    <div class="bg-white rounded-xl border border-slate-200 p-6">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4">Trending Now</h3>
+                        <div class="space-y-3">
+                            <div class="text-sm">
+                                <a href="#" class="text-slate-700 hover:text-primary transition-colors font-medium">
+                                    Getting started with Rust for JavaScript developers
+                                </a>
+                                <p class="text-slate-500 mt-1">2.1k views</p>
+                            </div>
+                            <div class="text-sm">
+                                <a href="#" class="text-slate-700 hover:text-primary transition-colors font-medium">
+                                    The future of AI in web development
+                                </a>
+                                <p class="text-slate-500 mt-1">1.8k views</p>
+                            </div>
+                            <div class="text-sm">
+                                <a href="#" class="text-slate-700 hover:text-primary transition-colors font-medium">
+                                    Building scalable microservices with Node.js
+                                </a>
+                                <p class="text-slate-500 mt-1">1.5k views</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: RightSidebar -->
+        </div>
+    </div>
+
+    <!-- Create Post Modal (Hidden by default) -->
+    <!-- @COMPONENT: CreatePostModal -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 hidden z-50" id="createPostModal" data-modal="createPost">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-6 border-b border-slate-200">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xl font-semibold text-slate-800">Create New Post</h2>
+                        <button class="text-slate-400 hover:text-slate-600 transition-colors" data-event="click:closeModal">
+                            <i class="fas fa-times text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-6 space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Title</label>
+                        <input 
+                            type="text" 
+                            placeholder="Enter your article title..." 
+                            class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                            data-bind="postTitle"
+                        >
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Tags</label>
+                        <input 
+                            type="text" 
+                            placeholder="Add tags separated by commas..." 
+                            class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                            data-bind="postTags"
+                        >
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Content</label>
+                        <!-- @FUNCTIONALITY: Rich text editor should be implemented here -->
+                        <textarea 
+                            rows="12" 
+                            placeholder="Write your article content..." 
+                            class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none"
+                            data-bind="postContent"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-4">
+                        <button class="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors" data-event="click:saveAsDraft">
+                            Save as Draft
+                        </button>
+                        <button class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors" data-event="click:publishPost">
+                            Publish Post
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: CreatePostModal -->
+
+    <script>
+        (function() {
+            // TODO: Implement Redux store for state management
+            // TODO: Implement authentication logic with localStorage
+            // TODO: Implement article CRUD operations
+            // TODO: Implement search functionality
+            // TODO: Implement comment system
+            // TODO: Implement tag filtering
+            // TODO: Implement user profiles and following system
+            
+            // Modal functionality
+            const createPostBtn = document.querySelector('[data-event="click:createPost"]');
+            const createPostModal = document.getElementById('createPostModal');
+            const closeModalBtn = document.querySelector('[data-event="click:closeModal"]');
+            
+            if (createPostBtn && createPostModal) {
+                createPostBtn.addEventListener('click', () => {
+                    createPostModal.classList.remove('hidden');
+                });
+            }
+            
+            if (closeModalBtn && createPostModal) {
+                closeModalBtn.addEventListener('click', () => {
+                    createPostModal.classList.add('hidden');
+                });
+            }
+            
+            // Close modal on backdrop click
+            if (createPostModal) {
+                createPostModal.addEventListener('click', (e) => {
+                    if (e.target === createPostModal) {
+                        createPostModal.classList.add('hidden');
+                    }
+                });
+            }
+            
+            // Filter tab functionality
+            const filterTabs = document.querySelectorAll('[data-filter]');
+            filterTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Remove active class from all tabs
+                    filterTabs.forEach(t => {
+                        t.classList.remove('bg-primary', 'text-white');
+                        t.classList.add('text-slate-600');
+                    });
+                    
+                    // Add active class to clicked tab
+                    tab.classList.add('bg-primary', 'text-white');
+                    tab.classList.remove('text-slate-600');
+                    
+                    // TODO: Implement actual filtering logic
+                });
+            });
+            
+            // Like button functionality
+            const likeButtons = document.querySelectorAll('[data-event="click:toggleLike"]');
+            likeButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const heartIcon = btn.querySelector('i');
+                    const likeCount = btn.querySelector('span');
+                    const currentCount = parseInt(likeCount.textContent);
+                    
+                    if (heartIcon.classList.contains('far')) {
+                        heartIcon.classList.remove('far');
+                        heartIcon.classList.add('fas');
+                        btn.classList.add('text-red-500');
+                        likeCount.textContent = currentCount + 1;
+                    } else {
+                        heartIcon.classList.remove('fas');
+                        heartIcon.classList.add('far');
+                        btn.classList.remove('text-red-500');
+                        likeCount.textContent = currentCount - 1;
+                    }
+                    
+                    // TODO: Persist like state to localStorage
+                });
+            });
+            
+            // Bookmark functionality
+            const bookmarkButtons = document.querySelectorAll('[data-event="click:bookmarkArticle"]');
+            bookmarkButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const bookmarkIcon = btn.querySelector('i');
+                    
+                    if (bookmarkIcon.classList.contains('far')) {
+                        bookmarkIcon.classList.remove('far');
+                        bookmarkIcon.classList.add('fas');
+                        btn.classList.add('text-blue-500');
+                    } else {
+                        bookmarkIcon.classList.remove('fas');
+                        bookmarkIcon.classList.add('far');
+                        btn.classList.remove('text-blue-500');
+                    }
+                    
+                    // TODO: Persist bookmark state to localStorage
+                });
+            });
+        })();
+    </script>
+</body>
+</html>

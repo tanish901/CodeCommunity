@@ -124,10 +124,10 @@ export default function Home() {
               <div className="flex items-center space-x-3 overflow-x-auto scrollbar-hide pb-2">
                 <Button
                   variant={!selectedTag ? "default" : "ghost"}
-                  className={`flex-shrink-0 rounded-full px-6 ${
+                  className={`flex-shrink-0 rounded-full px-6 transition-all duration-200 hover:scale-105 ${
                     !selectedTag 
-                      ? "bg-primary text-primary-foreground shadow-md" 
-                      : "hover:bg-muted text-muted-foreground"
+                      ? "bg-primary text-primary-foreground shadow-md hover:shadow-lg" 
+                      : "hover:bg-muted text-muted-foreground hover:shadow-md"
                   }`}
                   onClick={() => handleTagSelect(null)}
                 >
@@ -135,13 +135,21 @@ export default function Home() {
                 </Button>
                 <Button
                   variant="ghost"
-                  className="flex-shrink-0 rounded-full px-6 hover:bg-muted text-muted-foreground"
+                  className="flex-shrink-0 rounded-full px-6 hover:bg-muted text-muted-foreground hover:shadow-md transition-all duration-200 hover:scale-105"
+                  onClick={() => {
+                    // Following functionality - placeholder for now
+                    console.log("Following clicked");
+                  }}
                 >
                   Following
                 </Button>
                 <Button
                   variant="ghost"
-                  className="flex-shrink-0 rounded-full px-6 hover:bg-muted text-muted-foreground"
+                  className="flex-shrink-0 rounded-full px-6 hover:bg-muted text-muted-foreground hover:shadow-md transition-all duration-200 hover:scale-105"
+                  onClick={() => {
+                    // Featured functionality - placeholder for now
+                    console.log("Featured clicked");
+                  }}
                 >
                   Featured
                 </Button>
@@ -149,14 +157,14 @@ export default function Home() {
                   <Button
                     key={tag.id}
                     variant={selectedTag === tag.name ? "default" : "ghost"}
-                    className={`flex-shrink-0 rounded-full px-6 capitalize ${
+                    className={`flex-shrink-0 rounded-full px-6 capitalize transition-all duration-200 hover:scale-105 hover:shadow-md ${
                       selectedTag === tag.name
-                        ? "bg-primary text-primary-foreground shadow-md"
+                        ? "bg-primary text-primary-foreground shadow-md hover:shadow-lg"
                         : "hover:bg-muted text-muted-foreground"
                     }`}
-                    onClick={() => handleTagSelect(tag.name)}
+                    onClick={() => handleTagSelect(selectedTag === tag.name ? null : tag.name)}
                   >
-                    {tag.name}
+                    #{tag.name}
                   </Button>
                 ))}
               </div>

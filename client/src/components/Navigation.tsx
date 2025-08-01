@@ -23,6 +23,7 @@ export default function Navigation() {
   const [, setLocation] = useLocation();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -55,18 +56,32 @@ export default function Navigation() {
                 <Input
                   type="text"
                   placeholder="Search articles, tags, users..."
-                  className="pl-12 h-11 bg-muted/50 border-0 rounded-full focus:bg-background focus:ring-2 focus:ring-primary/20"
+                  className={`pl-12 h-11 bg-muted/50 border-0 rounded-full transition-all duration-300 ${
+                    isSearchFocused 
+                      ? "bg-background shadow-xl ring-2 ring-primary/20 scale-105" 
+                      : "hover:bg-muted/70"
+                  }`}
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => setIsSearchFocused(false)}
                 />
               </div>
             </div>
 
+            {/* Blur Overlay for Search Focus */}
+            {isSearchFocused && (
+              <div 
+                className="fixed inset-0 bg-black/20 backdrop-blur-sm z-10 pointer-events-none"
+                style={{ zIndex: 10 }}
+              />
+            )}
+
             {/* Right Navigation */}
             <div className="flex items-center space-x-3">
               <Button
-                onClick={() => setShowCreateModal(true)}
-                className="bg-primary hover:bg-primary/90 shadow-lg rounded-full px-6"
+                onClick={() => setLocation('/create')}
+                className="bg-primary hover:bg-primary/90 shadow-lg rounded-full px-6 hover:shadow-xl transition-all duration-200 hover:scale-105"
                 size="sm"
               >
                 <Plus size={16} className="mr-2" />

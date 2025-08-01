@@ -124,7 +124,7 @@ export default function Navigation() {
                       <div 
                         className="text-sm p-3 bg-muted/50 rounded-lg hover:bg-muted/70 cursor-pointer transition-colors"
                         onClick={() => {
-                          setLocation('/author/sarahchen');
+                          setLocation('/profile/user-1');
                           setShowNotifications(false);
                         }}
                       >
